@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Ignite — Acceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --base:#0B0B0D; --surface:#16161A; --surface-alt:#1F1F24; --border:#2A2A30;
+    --ember:#E2703A; --copper-deep:#A6521F; --tint:#241610; --ink:#17110C;
+    --text:#F5F3F0; --text-2:#A8A29B; --muted:#6E6A65;
+    --success:#4CAF7D; --danger:#E5484D;
+    --display:'Barlow Condensed', system-ui, sans-serif; --body:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--base); color:var(--text); font-family:var(--body); min-height:100vh;}
+  body{display:flex; justify-content:center;}
+  .phone{width:100%; max-width:430px; min-height:100vh; padding:26px 22px 40px; display:flex; flex-direction:column;}
+
+  .brand{display:flex; flex-direction:column; align-items:center; text-align:center; margin:40px 0 30px;}
+  .brand .mark{width:60px; height:60px; border-radius:16px; background:var(--tint); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ember); font-size:30px; margin-bottom:16px;}
+  .brand .wm{font-family:var(--display); font-weight:700; font-size:30px; letter-spacing:2px; text-transform:uppercase; line-height:1;}
+  .brand small{font-size:11px; letter-spacing:4px; color:var(--muted); margin-top:8px;}
+
+  .tabs{display:flex; gap:6px; background:var(--surface-alt); border:1px solid var(--border); border-radius:14px; padding:5px; margin-bottom:22px;}
+  .tab{flex:1; padding:12px; border-radius:10px; background:transparent; border:none; color:var(--text-2); font-family:var(--body); font-size:14px; font-weight:600; cursor:pointer;}
+  .tab.active{background:var(--ember); color:var(--ink);}
+
+  label{font-size:13px; font-weight:600; color:var(--text); display:block; margin:14px 0 8px;}
+  input{width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; color:var(--text); font-family:var(--body); font-size:15px;}
+  input::placeholder{color:var(--muted);}
+  input:focus{outline:none; border-color:var(--ember);}
+
+  .btn{width:100%; background:var(--ember); color:var(--ink); border:none; border-radius:14px; padding:16px; font-size:16px; font-weight:700; cursor:pointer; font-family:var(--body); margin-top:22px;}
+  .btn:active{background:var(--copper-deep);}
+  .btn:disabled{opacity:.6; cursor:default;}
+  .btn.ghost{background:transparent; color:var(--text); border:1px solid var(--border);}
+
+  .msg{margin-top:16px; padding:13px 15px; border-radius:12px; font-size:14px; line-height:1.4; display:none;}
+  .msg.err{display:block; background:rgba(229,72,77,.12); border:1px solid rgba(229,72,77,.4); color:#ffb3b5;}
+  .msg.ok{display:block; background:rgba(76,175,125,.12); border:1px solid rgba(76,175,125,.4); color:#9fe3c1;}
+
+  .hide{display:none !important;}
+
+  /* Vista "dentro" */
+  .inbox{margin-top:20px; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px; text-align:center;}
+  .inbox .big{font-size:48px;}
+  .inbox h2{font-family:var(--display); font-size:26px; text-transform:uppercase; letter-spacing:1px; margin:14px 0 6px;}
+  .inbox p{color:var(--text-2); font-size:14px; line-height:1.5;}
+  .inbox .lvl{display:inline-block; margin-top:14px; background:var(--tint); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; color:var(--text-2);}
+  .inbox .lvl b{color:var(--ember);}
+
+  .foot{text-align:center; color:var(--muted); font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-top:auto; padding-top:30px;}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="brand">
+    <div class="mark">🔥</div>
+    <div class="wm">Método Ignite</div>
+    <small>ACCESO</small>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div id="authView">
+    <div class="tabs">
+      <button class="tab active" id="tabLogin">Entrar</button>
+      <button class="tab" id="tabRegister">Crear cuenta</button>
+    </div>
+
+    <div id="nameField" class="hide">
+      <label>Nombre</label>
+      <input id="name" type="text" placeholder="Tu nombre" autocomplete="name" />
+    </div>
+
+    <label>Correo electrónico</label>
+    <input id="email" type="email" placeholder="tucorreo@email.com" autocomplete="email" />
+
+    <label>Contraseña</label>
+    <input id="password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="current-password" />
+
+    <button class="btn" id="submitBtn">Entrar</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <!-- DENTRO -->
+  <div id="appView" class="hide">
+    <div class="inbox">
+      <div class="big">🔥</div>
+      <h2>¡Estás dentro!</h2>
+      <p id="who">—</p>
+      <div class="lvl">Nivel: <b id="lvl">sin asignar</b></div>
+    </div>
+    <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px; line-height:1.5;">
+      Firebase está funcionando. El siguiente paso será cargar aquí tu entrenamiento real.
+    </p>
+    <button class="btn ghost" id="logoutBtn" style="margin-top:20px;">Cerrar sesión</button>
+  </div>
+
+  <div class="foot">Método Ignite</div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  // ============================================================
+  //  👇  PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE (Parte 2 de la guía)
+  // ============================================================
+  const firebaseConfig = {
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
+  // ============================================================
+
+  const $ = (id) => document.getElementById(id);
+  const msg = $("msg");
+  function showMsg(text, type){ msg.className = "msg " + type; msg.textContent = text; }
+  function clearMsg(){ msg.className = "msg"; msg.textContent = ""; }
+
+  // Aviso amable si aún no se ha pegado la config
+  if (firebaseConfig.apiKey === "PEGA_AQUÍ") {
+    showMsg("Aún no has pegado tu configuración de Firebase. Revisa la Parte 5 de la guía.", "err");
+  }
+
+  let app, auth, db;
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (e) {
+    showMsg("La configuración de Firebase no es válida todavía.", "err");
+  }
+
+  // --- Cambio entre Entrar / Crear cuenta ---
+  let mode = "login";
+  function setMode(m){
+    mode = m;
+    clearMsg();
+    $("tabLogin").classList.toggle("active", m === "login");
+    $("tabRegister").classList.toggle("active", m === "register");
+    $("nameField").classList.toggle("hide", m !== "register");
+    $("submitBtn").textContent = m === "login" ? "Entrar" : "Crear cuenta";
+    $("password").setAttribute("autocomplete", m === "login" ? "current-password" : "new-password");
+  }
+  $("tabLogin").addEventListener("click", () => setMode("login"));
+  $("tabRegister").addEventListener("click", () => setMode("register"));
+
+  // --- Traducción de errores de Firebase a español ---
+  function friendly(code){
+    switch (code) {
+      case "auth/invalid-email": return "El correo no tiene un formato válido.";
+      case "auth/missing-password": return "Escribe una contraseña.";
+      case "auth/weak-password": return "La contraseña debe tener al menos 6 caracteres.";
+      case "auth/email-already-in-use": return "Ya existe una cuenta con ese correo. Prueba a entrar.";
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found": return "Correo o contraseña incorrectos.";
+      case "auth/too-many-requests": return "Demasiados intentos. Espera un momento.";
+      case "auth/network-request-failed": return "Problema de conexión. Revisa tu internet.";
+      case "auth/unauthorized-domain": return "Dominio no autorizado. Añádelo en Authentication → Settings → Dominios autorizados.";
+      default: return "Ha ocurrido un error. Inténtalo de nuevo.";
+    }
+  }
+
+  // --- Enviar formulario ---
+  $("submitBtn").addEventListener("click", async () => {
+    if (!auth) { showMsg("Firebase no está configurado todavía.", "err"); return; }
+    clearMsg();
+    const name = $("name").value.trim();
+    const email = $("email").value.trim();
+    const password = $("password").value;
+
+    if (!email || !password) { showMsg("Rellena correo y contraseña.", "err"); return; }
+    if (mode === "register" && !name) { showMsg("Escribe tu nombre.", "err"); return; }
+
+    $("submitBtn").disabled = true;
+    try {
+      if (mode === "register") {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        // Creamos su ficha en Firestore. El nivel lo asigna el administrador.
+        await setDoc(doc(db, "users", cred.user.uid), {
+          name, email,
+          role: "student",
+          level: null,
+          createdAt: serverTimestamp()
+        });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      // onAuthStateChanged se encarga de mostrar la vista "dentro".
+    } catch (e) {
+      showMsg(friendly(e.code), "err");
+    } finally {
+      $("submitBtn").disabled = false;
+    }
+  });
+
+  // --- Cerrar sesión ---
+  $("logoutBtn").addEventListener("click", () => signOut(auth));
+
+  // --- Escucha el estado de sesión (persiste al recargar) ---
+  if (auth) {
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        $("authView").classList.add("hide");
+        $("appView").classList.remove("hide");
+        $("who").textContent = user.email;
+        // Leemos su nivel desde Firestore
+        try {
+          const snap = await getDoc(doc(db, "users", user.uid));
+          const data = snap.exists() ? snap.data() : null;
+          $("lvl").textContent = (data && data.level) ? data.level : "sin asignar";
+          if (data && data.name) $("who").textContent = data.name + " · " + user.email;
+        } catch (e) { /* si las reglas bloquean, dejamos "sin asignar" */ }
+      } else {
+        $("appView").classList.add("hide");
+        $("authView").classList.remove("hide");
+      }
+    });
+  }
+</script>
+</body>
+</html>
