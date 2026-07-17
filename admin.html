@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Ignite — Panel de administrador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --base:#0B0B0D; --surface:#16161A; --surface-alt:#1F1F24; --border:#2A2A30;
+    --ember:#E2703A; --copper-deep:#A6521F; --tint:#241610; --ink:#17110C;
+    --text:#F5F3F0; --text-2:#A8A29B; --muted:#6E6A65;
+    --success:#4CAF7D; --danger:#E5484D; --warning:#E8A13A;
+    --display:'Barlow Condensed', system-ui, sans-serif; --body:'Inter', system-ui, sans-serif;
+  }
+  .phone[data-theme="light"]{
+    --base:#F6F4F0; --surface:#FFFFFF; --surface-alt:#F0ECE6; --border:#E4DFD8;
+    --text:#1A1714; --text-2:#6B655E; --muted:#9A938B; --tint:#FBEEE6;
+  }
+  .phone[data-theme="light"] .nav{background:rgba(246,244,240,.94);}
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--base); color:var(--text); font-family:var(--body); min-height:100vh;}
+  body{display:flex; justify-content:center;}
+  .phone{width:100%; max-width:430px; min-height:100vh; background:var(--base); position:relative; display:flex; flex-direction:column; transition:background .25s;}
+  .screen{flex:1; padding:24px 22px 112px; display:none; animation:fade .3s;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1;}}
+  .center{padding:26px 22px; display:flex; flex-direction:column; min-height:100vh;}
+
+  .eyebrow{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); font-weight:600;}
+  h1{font-family:var(--display); font-weight:700; font-size:36px; line-height:1; letter-spacing:.5px; text-transform:uppercase; color:var(--text);}
+  .sub{color:var(--text-2); font-size:15px; line-height:1.5;}
+
+  .brand{display:flex; flex-direction:column; align-items:center; text-align:center; margin:36px 0 26px;}
+  .brand .mark{width:58px; height:58px; border-radius:16px; background:var(--tint); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ember); font-size:28px; margin-bottom:14px;}
+  .brand .wm{font-family:var(--display); font-weight:700; font-size:28px; letter-spacing:2px; text-transform:uppercase;}
+  .brand small{font-size:10px; letter-spacing:4px; color:var(--ember); margin-top:8px; font-weight:600;}
+
+  label{font-size:13px; font-weight:600; color:var(--text); display:block; margin:14px 0 8px;}
+  input,select{width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px 14px; color:var(--text); font-family:var(--body); font-size:15px;}
+  input::placeholder{color:var(--muted);}
+  input:focus,select:focus{outline:none; border-color:var(--ember);}
+
+  .btn{width:100%; background:var(--ember); color:var(--ink); border:none; border-radius:14px; padding:15px; font-size:15px; font-weight:700; cursor:pointer; font-family:var(--body); margin-top:16px;}
+  .btn:active{background:var(--copper-deep);}
+  .btn:disabled{opacity:.6;}
+  .btn.ghost{background:transparent; color:var(--text); border:1px solid var(--border);}
+  .btn.sm{padding:11px; font-size:13px; margin-top:0;}
+
+  .msg{margin-top:14px; padding:12px 14px; border-radius:12px; font-size:14px; line-height:1.4; display:none;}
+  .msg.err{display:block; background:rgba(229,72,77,.12); border:1px solid rgba(229,72,77,.4); color:#ffb3b5;}
+  .msg.ok{display:block; background:rgba(76,175,125,.12); border:1px solid rgba(76,175,125,.4); color:#9fe3c1;}
+  .hide{display:none !important;}
+  .back{background:none; border:none; color:var(--text-2); font-size:14px; margin-bottom:16px; display:flex; align-items:center; gap:6px; cursor:pointer; font-family:var(--body);}
+  .head-row{margin-bottom:18px;}
+  .note{font-size:12px; color:var(--muted); line-height:1.5; margin-top:12px;} .note b{color:var(--ember);}
+
+  .kpi-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;}
+  .kpi{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px;}
+  .kpi b{font-family:var(--display); font-size:32px; color:var(--text); line-height:1;}
+  .kpi.accent b{color:var(--ember);}
+  .kpi small{display:block; color:var(--muted); font-size:11px; letter-spacing:.6px; text-transform:uppercase; margin-top:6px;}
+
+  .sec-label{margin:22px 0 12px;}
+  .lrow{display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 14px; margin-bottom:10px; cursor:pointer;}
+  .lrow .lvl{width:40px; height:40px; border-radius:11px; background:var(--tint); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:700; font-size:20px; color:var(--ember); flex-shrink:0;}
+  .lrow .av{width:40px; height:40px; border-radius:50%; background:var(--copper-deep); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:600; font-size:16px; flex-shrink:0;}
+  .lrow .body{flex:1; min-width:0;} .lrow .body b{font-size:15px; display:block; color:var(--text);}
+  .lrow .body span{font-size:12px; color:var(--text-2); word-break:break-all;}
+  .lrow .chev{color:var(--muted);}
+  .pill{font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; padding:3px 8px; border-radius:20px; white-space:nowrap;}
+  .pill.ok{background:rgba(226,112,58,.15); color:var(--ember);}
+  .pill.none{background:var(--surface-alt); color:var(--muted);}
+
+  .lvl-select{display:flex; gap:8px; flex-wrap:wrap;}
+  .lvl-select .lb{flex:1; min-width:42px; text-align:center; padding:12px 0; border-radius:11px; background:var(--surface); border:1px solid var(--border); font-family:var(--display); font-size:20px; font-weight:700; color:var(--text-2); cursor:pointer;}
+  .lvl-select .lb.sel{background:var(--ember); border-color:var(--ember); color:var(--ink);}
+  .two{display:flex; gap:10px;} .two>div{flex:1;}
+
+  .ex{background:var(--surface-alt); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px;}
+  .ex .en{font-size:14px; font-weight:600; color:var(--text); display:flex; justify-content:space-between;}
+  .ex .en .del{color:var(--danger); font-size:12px; cursor:pointer;}
+  .ex .meta{font-size:12px; color:var(--text-2); margin-top:4px;}
+  .add-ex{width:100%; background:transparent; border:1px dashed var(--border); color:var(--ember); border-radius:10px; padding:11px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--body); margin-top:6px;}
+  .editor{background:var(--surface); border:1px solid var(--ember); border-radius:14px; padding:16px; margin:10px 0;}
+
+  .seg{display:flex; gap:6px; background:var(--surface-alt); border:1px solid var(--border); border-radius:14px; padding:5px; margin-top:12px;}
+  .seg-btn{flex:1; padding:12px; border-radius:10px; background:transparent; border:none; color:var(--text-2); font-family:var(--body); font-size:14px; font-weight:600; cursor:pointer;}
+  .seg-btn.active{background:var(--ember); color:var(--ink);}
+  .set-card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:14px;}
+
+  .nav{position:fixed; bottom:0; width:100%; max-width:430px; background:rgba(11,11,13,.94); backdrop-filter:blur(12px); border-top:1px solid var(--border); display:flex; padding:9px 0 calc(9px + env(safe-area-inset-bottom)); z-index:5;}
+  .nav button{flex:1; background:none; border:none; color:var(--muted); font-size:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; font-family:var(--body);}
+  .nav button .ic{font-size:19px;} .nav button.active{color:var(--ember);}
+  .loading{color:var(--muted); font-size:14px; text-align:center; padding:20px;}
+</style>
+</head>
+<body>
+<div class="phone" data-theme="dark">
+
+  <!-- LOGIN -->
+  <div id="authView" class="center">
+    <div class="brand"><div class="mark">🔥</div><div class="wm">Método Ignite</div><small>PANEL DE ADMINISTRADOR</small></div>
+    <label>Correo electrónico</label>
+    <input id="email" type="email" placeholder="tucorreo@email.com" autocomplete="email" />
+    <label>Contraseña</label>
+    <input id="password" type="password" placeholder="Tu contraseña" autocomplete="current-password" />
+    <button class="btn" id="loginBtn">Entrar</button>
+    <div class="msg" id="authMsg"></div>
+    <p class="note" style="margin-top:20px">Accede con tu cuenta de Ignite. Solo las cuentas de administrador pueden gestionar el panel.</p>
+  </div>
+
+  <!-- SETUP: convertir en admin -->
+  <div id="setupView" class="center hide">
+    <div class="brand"><div class="mark">🛠️</div><div class="wm">Configuración</div><small>PRIMER ACCESO</small></div>
+    <p class="sub" style="text-align:center">Esta cuenta aún no es administradora. Conviértela para gestionar Ignite.</p>
+    <button class="btn" id="becomeAdminBtn" style="margin-top:24px">Convertir en administrador</button>
+    <button class="btn ghost" id="setupLogout" style="margin-top:10px">Cerrar sesión</button>
+    <div class="msg" id="setupMsg"></div>
+    <p class="note" style="margin-top:20px">Paso único de configuración inicial. Más adelante lo protegeremos con reglas de seguridad para que nadie más pueda hacerse administrador.</p>
+  </div>
+
+  <!-- APP -->
+  <div id="appView" class="hide">
+
+    <!-- PANEL -->
+    <section class="screen active" id="adm-panel">
+      <div class="brand" style="align-items:flex-start; text-align:left; margin:22px 0 18px">
+        <div style="display:flex; align-items:center; gap:11px">
+          <div class="mark" style="width:34px;height:34px;font-size:17px;margin:0">🔥</div>
+          <div class="wm" style="font-size:21px">Método Ignite</div>
+        </div>
+      </div>
+      <span class="eyebrow">Resumen</span>
+      <div style="height:12px"></div>
+      <div class="kpi-row">
+        <div class="kpi accent"><b id="kAlumnos">—</b><small>Alumnos</small></div>
+        <div class="kpi"><b id="kNivel">—</b><small>Con nivel asignado</small></div>
+        <div class="kpi"><b id="kEntrenos">—</b><small>Entrenamientos</small></div>
+        <div class="kpi"><b id="kPend">—</b><small>Sin nivel</small></div>
+      </div>
+      <div class="sec-label"><span class="eyebrow">Acceso rápido</span></div>
+      <button class="btn" id="qaAlumnos" style="margin-top:0">👥 Gestionar alumnos</button>
+      <button class="btn ghost" id="qaCrear" style="margin-top:10px">➕ Crear entrenamiento</button>
+    </section>
+
+    <!-- ALUMNOS -->
+    <section class="screen" id="adm-alumnos">
+      <div class="head-row"><span class="eyebrow">Gestión</span><h1>Alumnos</h1></div>
+      <div id="alumnosList"><div class="loading">Cargando alumnos…</div></div>
+    </section>
+
+    <!-- ALUMNO DETALLE -->
+    <section class="screen" id="adm-alumno">
+      <button class="back" id="backAlumnos">← Alumnos</button>
+      <div class="lrow" style="cursor:default"><div class="av" id="aAv">–</div><div class="body"><b id="aName" style="font-size:17px">–</b><span id="aEmail">–</span></div></div>
+      <label>Nivel del alumno</label>
+      <div class="lvl-select" id="aLvlSelect">
+        <div class="lb" data-lvl="A">A</div><div class="lb" data-lvl="B">B</div><div class="lb" data-lvl="C">C</div>
+        <div class="lb" data-lvl="D">D</div><div class="lb" data-lvl="E">E</div><div class="lb" data-lvl="F">F</div>
+      </div>
+      <p class="note"><b>Solo tú</b> puedes cambiar el nivel. Se guarda al instante y el alumno lo verá en su app.</p>
+      <div class="msg" id="aMsg"></div>
+    </section>
+
+    <!-- ENTRENOS -->
+    <section class="screen" id="adm-entrenos">
+      <div class="head-row"><span class="eyebrow">Contenido</span><h1>Entrenamientos</h1></div>
+      <button class="btn" id="goCrear" style="margin:0 0 18px">➕ Nuevo entrenamiento</button>
+      <div id="entrenosList"><div class="loading">Cargando…</div></div>
+    </section>
+
+    <!-- CREAR ENTRENO -->
+    <section class="screen" id="adm-crear">
+      <button class="back" id="backEntrenos">← Entrenamientos</button>
+      <span class="eyebrow">Crear entrenamiento</span>
+      <h1>Nuevo entreno</h1>
+      <label>Título</label>
+      <input id="wTitle" type="text" placeholder="Ej. Técnica & Subidas" />
+      <label>Asignar a nivel</label>
+      <div class="lvl-select" id="wLvlSelect">
+        <div class="lb" data-lvl="A">A</div><div class="lb" data-lvl="B">B</div><div class="lb" data-lvl="C">C</div>
+        <div class="lb" data-lvl="D">D</div><div class="lb" data-lvl="E">E</div><div class="lb" data-lvl="F">F</div>
+      </div>
+
+      <label style="margin-top:20px">Ejercicios</label>
+      <div id="wExList"></div>
+      <button class="add-ex" id="addExBtn">+ Añadir ejercicio</button>
+
+      <div class="editor hide" id="exEditor">
+        <input id="exName" type="text" placeholder="Nombre del ejercicio" />
+        <div class="two" style="margin-top:10px">
+          <div><input id="exSeries" type="text" placeholder="Series (ej. 4)" /></div>
+          <div><input id="exReps" type="text" placeholder="Reps (ej. 20s)" /></div>
+        </div>
+        <input id="exRest" type="text" placeholder="Descanso (ej. 60s)" style="margin-top:10px" />
+        <div class="two" style="margin-top:12px">
+          <div><button class="btn ghost sm" id="exCancel">Cancelar</button></div>
+          <div><button class="btn sm" id="exAdd">Añadir</button></div>
+        </div>
+      </div>
+
+      <button class="btn" id="saveWorkoutBtn">Publicar entrenamiento</button>
+      <div class="msg" id="wMsg"></div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section class="screen" id="adm-ajustes">
+      <span class="eyebrow">Preferencias</span><h1>Ajustes</h1>
+      <div style="height:20px"></div>
+      <div class="set-card">
+        <b style="color:var(--text)">Apariencia</b>
+        <div class="seg">
+          <button class="seg-btn" data-mode="light">☀️ Claro</button>
+          <button class="seg-btn active" data-mode="dark">🌙 Oscuro</button>
+        </div>
+      </div>
+      <div class="set-card">
+        <b style="color:var(--text)">Sesión</b>
+        <p class="sub" id="meEmail" style="font-size:13px; margin:6px 0 12px">–</p>
+        <button class="btn ghost sm" id="appLogout">Cerrar sesión</button>
+      </div>
+    </section>
+
+    <nav class="nav">
+      <button class="active" data-t="adm-panel"><span class="ic">📊</span>Panel</button>
+      <button data-t="adm-alumnos"><span class="ic">👥</span>Alumnos</button>
+      <button data-t="adm-entrenos"><span class="ic">📋</span>Entrenos</button>
+      <button data-t="adm-ajustes"><span class="ic">⚙️</span>Ajustes</button>
+    </nav>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+  // ============================================================
+  //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
+  //  (la misma que pusiste en index.html — puedes copiarla de allí)
+  // ============================================================
+  const firebaseConfig = {
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
+  // ============================================================
+
+  const $ = (id)=>document.getElementById(id);
+  const show = (el)=>el.classList.remove('hide');
+  const hide = (el)=>el.classList.add('hide');
+  function msg(el, text, type){ el.className='msg '+type; el.textContent=text; }
+  function clear(el){ el.className='msg'; el.textContent=''; }
+
+  let app, auth, db, currentUser=null;
+  try {
+    app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
+  } catch(e){ msg($('authMsg'), 'La configuración de Firebase no es válida todavía.', 'err'); }
+  if (firebaseConfig.apiKey === 'PEGA_AQUÍ') {
+    msg($('authMsg'), 'Aún no has pegado tu configuración de Firebase (cópiala de tu index.html).', 'err');
+  }
+
+  function friendly(code){
+    switch(code){
+      case 'auth/invalid-email': return 'El correo no es válido.';
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found': return 'Correo o contraseña incorrectos.';
+      case 'auth/too-many-requests': return 'Demasiados intentos. Espera un momento.';
+      case 'auth/network-request-failed': return 'Problema de conexión.';
+      default: return 'Ha ocurrido un error. Inténtalo de nuevo.';
+    }
+  }
+
+  // ---------- LOGIN ----------
+  $('loginBtn').addEventListener('click', async ()=>{
+    if(!auth){ return; }
+    clear($('authMsg'));
+    const email=$('email').value.trim(), pass=$('password').value;
+    if(!email||!pass){ msg($('authMsg'),'Rellena correo y contraseña.','err'); return; }
+    $('loginBtn').disabled=true;
+    try{ await signInWithEmailAndPassword(auth,email,pass); }
+    catch(e){ msg($('authMsg'), friendly(e.code),'err'); }
+    finally{ $('loginBtn').disabled=false; }
+  });
+
+  // ---------- SETUP (convertir en admin) ----------
+  $('becomeAdminBtn').addEventListener('click', async ()=>{
+    if(!currentUser) return;
+    $('becomeAdminBtn').disabled=true;
+    try{
+      await setDoc(doc(db,'users',currentUser.uid), { role:'admin', email:currentUser.email }, {merge:true});
+      await route(currentUser);
+    }catch(e){ msg($('setupMsg'),'No se pudo. Revisa que Firestore esté creado.','err'); }
+    finally{ $('becomeAdminBtn').disabled=false; }
+  });
+  $('setupLogout').addEventListener('click', ()=>signOut(auth));
+  $('appLogout').addEventListener('click', ()=>signOut(auth));
+
+  // ---------- Vistas ----------
+  function view(name){
+    hide($('authView')); hide($('setupView')); hide($('appView'));
+    if(name==='auth') show($('authView'));
+    else if(name==='setup') show($('setupView'));
+    else show($('appView'));
+  }
+  function screen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    $(id).classList.add('active');
+    const map={'adm-alumno':'adm-alumnos','adm-crear':'adm-entrenos'};
+    const tab=map[id]||id;
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('.nav button').forEach(b=>{
+    b.addEventListener('click', ()=>{ const t=b.dataset.t; screen(t); if(t==='adm-alumnos') loadAlumnos(); if(t==='adm-entrenos') loadEntrenos(); if(t==='adm-panel') loadDashboard(); });
+  });
+  $('qaAlumnos').addEventListener('click', ()=>{ screen('adm-alumnos'); loadAlumnos(); });
+  $('qaCrear').addEventListener('click', ()=>{ screen('adm-crear'); });
+  $('goCrear').addEventListener('click', ()=>{ screen('adm-crear'); });
+  $('backAlumnos').addEventListener('click', ()=>{ screen('adm-alumnos'); loadAlumnos(); });
+  $('backEntrenos').addEventListener('click', ()=>{ screen('adm-entrenos'); loadEntrenos(); });
+
+  // Tema
+  document.querySelectorAll('.seg-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelector('.phone').setAttribute('data-theme', b.dataset.mode);
+      b.parentElement.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+
+  // ---------- Datos ----------
+  let usersCache = {};
+  async function loadDashboard(){
+    try{
+      const us = await getDocs(collection(db,'users'));
+      let total=0, withLvl=0;
+      us.forEach(d=>{ const x=d.data(); if(x.role==='admin') return; total++; if(x.level) withLvl++; });
+      const ws = await getDocs(collection(db,'workoutTemplates'));
+      $('kAlumnos').textContent=total; $('kNivel').textContent=withLvl;
+      $('kPend').textContent=(total-withLvl); $('kEntrenos').textContent=ws.size;
+    }catch(e){ /* silencioso */ }
+  }
+
+  async function loadAlumnos(){
+    const cont=$('alumnosList'); cont.innerHTML='<div class="loading">Cargando alumnos…</div>';
+    try{
+      const us=await getDocs(collection(db,'users')); usersCache={};
+      let html=''; let count=0;
+      us.forEach(d=>{
+        const x=d.data(); usersCache[d.id]={...x, uid:d.id};
+        if(x.role==='admin') return; count++;
+        const initials=(x.name||x.email||'?').substring(0,2).toUpperCase();
+        const lvl = x.level ? '<span class="pill ok">Nivel '+x.level+'</span>' : '<span class="pill none">Sin nivel</span>';
+        html+='<div class="lrow" data-uid="'+d.id+'"><div class="av">'+initials+'</div><div class="body"><b>'+(x.name||'Sin nombre')+'</b><span>'+(x.email||'')+'</span></div>'+lvl+'</div>';
+      });
+      cont.innerHTML = count ? html : '<div class="loading">Aún no hay alumnos registrados.</div>';
+      cont.querySelectorAll('.lrow').forEach(r=> r.addEventListener('click', ()=>openAlumno(r.dataset.uid)));
+    }catch(e){ cont.innerHTML='<div class="loading">No se pudieron cargar (revisa Firestore).</div>'; }
+  }
+
+  let selectedAlumno=null;
+  function openAlumno(uid){
+    const x=usersCache[uid]; if(!x) return; selectedAlumno=uid;
+    $('aAv').textContent=(x.name||x.email||'?').substring(0,2).toUpperCase();
+    $('aName').textContent=x.name||'Sin nombre'; $('aEmail').textContent=x.email||'';
+    $('aLvlSelect').querySelectorAll('.lb').forEach(b=>b.classList.toggle('sel', b.dataset.lvl===x.level));
+    clear($('aMsg')); screen('adm-alumno');
+  }
+  $('aLvlSelect').querySelectorAll('.lb').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      if(!selectedAlumno) return;
+      const level=b.dataset.lvl;
+      $('aLvlSelect').querySelectorAll('.lb').forEach(x=>x.classList.toggle('sel', x===b));
+      try{
+        await updateDoc(doc(db,'users',selectedAlumno), { level });
+        if(usersCache[selectedAlumno]) usersCache[selectedAlumno].level=level;
+        msg($('aMsg'),'Nivel '+level+' asignado y guardado.','ok');
+      }catch(e){ msg($('aMsg'),'No se pudo guardar el nivel.','err'); }
+    });
+  });
+
+  async function loadEntrenos(){
+    const cont=$('entrenosList'); cont.innerHTML='<div class="loading">Cargando…</div>';
+    try{
+      const ws=await getDocs(collection(db,'workoutTemplates'));
+      let html='';
+      ws.forEach(d=>{ const w=d.data(); const n=(w.exercises||[]).length;
+        html+='<div class="lrow" style="cursor:default"><div class="lvl">'+(w.level||'?')+'</div><div class="body"><b>'+(w.title||'Sin título')+'</b><span>'+n+' ejercicios · Nivel '+(w.level||'—')+'</span></div></div>'; });
+      cont.innerHTML = ws.size ? html : '<div class="loading">Aún no has creado entrenamientos.</div>';
+    }catch(e){ cont.innerHTML='<div class="loading">No se pudieron cargar.</div>'; }
+  }
+
+  // Crear entreno
+  let newExercises=[];
+  $('wLvlSelect').querySelectorAll('.lb').forEach(b=>{
+    b.addEventListener('click', ()=>{ $('wLvlSelect').querySelectorAll('.lb').forEach(x=>x.classList.toggle('sel', x===b)); });
+  });
+  $('addExBtn').addEventListener('click', ()=>{ show($('exEditor')); });
+  $('exCancel').addEventListener('click', ()=>{ hide($('exEditor')); });
+  $('exAdd').addEventListener('click', ()=>{
+    const name=$('exName').value.trim(); if(!name){ return; }
+    newExercises.push({ name, series:$('exSeries').value.trim(), reps:$('exReps').value.trim(), rest:$('exRest').value.trim() });
+    $('exName').value=''; $('exSeries').value=''; $('exReps').value=''; $('exRest').value='';
+    hide($('exEditor')); renderNewEx();
+  });
+  function renderNewEx(){
+    const c=$('wExList'); c.innerHTML='';
+    newExercises.forEach((e,i)=>{
+      const meta=[e.series&&(e.series+' series'), e.reps, e.rest&&('descanso '+e.rest)].filter(Boolean).join(' · ');
+      const div=document.createElement('div'); div.className='ex';
+      div.innerHTML='<div class="en">'+e.name+' <span class="del" data-i="'+i+'">✕</span></div>'+(meta?'<div class="meta">'+meta+'</div>':'');
+      c.appendChild(div);
+    });
+    c.querySelectorAll('.del').forEach(d=> d.addEventListener('click', ()=>{ newExercises.splice(+d.dataset.i,1); renderNewEx(); }));
+  }
+  $('saveWorkoutBtn').addEventListener('click', async ()=>{
+    clear($('wMsg'));
+    const title=$('wTitle').value.trim();
+    const lvlEl=$('wLvlSelect').querySelector('.lb.sel');
+    const level=lvlEl?lvlEl.dataset.lvl:null;
+    if(!title){ msg($('wMsg'),'Ponle un título.','err'); return; }
+    if(!level){ msg($('wMsg'),'Elige un nivel.','err'); return; }
+    if(!newExercises.length){ msg($('wMsg'),'Añade al menos un ejercicio.','err'); return; }
+    $('saveWorkoutBtn').disabled=true;
+    try{
+      await addDoc(collection(db,'workoutTemplates'), { title, level, exercises:newExercises, coachId:currentUser.uid, createdAt:serverTimestamp() });
+      $('wTitle').value=''; newExercises=[]; renderNewEx();
+      $('wLvlSelect').querySelectorAll('.lb').forEach(x=>x.classList.remove('sel'));
+      msg($('wMsg'),'¡Entrenamiento publicado!','ok');
+      setTimeout(()=>{ screen('adm-entrenos'); loadEntrenos(); }, 800);
+    }catch(e){ msg($('wMsg'),'No se pudo guardar.','err'); }
+    finally{ $('saveWorkoutBtn').disabled=false; }
+  });
+
+  // ---------- Enrutado por sesión/rol ----------
+  async function route(user){
+    if(!user){ view('auth'); return; }
+    currentUser=user; $('meEmail').textContent=user.email;
+    let role=null;
+    try{ const s=await getDoc(doc(db,'users',user.uid)); role=s.exists()?(s.data().role||null):null; }catch(e){}
+    if(role==='admin'){ view('app'); screen('adm-panel'); loadDashboard(); }
+    else { view('setup'); }
+  }
+  if(auth){ onAuthStateChanged(auth, route); }
+</script>
+</body>
+</html>
