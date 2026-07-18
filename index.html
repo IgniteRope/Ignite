@@ -106,6 +106,19 @@
   .seg-btn{flex:1; padding:12px; border-radius:10px; background:transparent; border:none; color:var(--text-2); font-family:var(--body); font-size:14px; font-weight:600; cursor:pointer;}
   .seg-btn.active{background:var(--ember); color:var(--ink);}
 
+  .field{margin-bottom:22px;}
+  .field label{display:block; font-size:14px; font-weight:600; margin-bottom:12px; color:var(--text);}
+  .rpe-val{font-family:var(--display); color:var(--ember); font-size:30px;}
+  input[type=range]{width:100%; accent-color:var(--ember); padding:0; background:transparent; border:none;}
+  .opts{display:flex; gap:8px;}
+  .opt{flex:1; text-align:center; padding:12px 6px; border-radius:12px; background:var(--surface); border:1px solid var(--border); font-size:13px; cursor:pointer; color:var(--text-2);}
+  .opt.sel{border-color:var(--ember); color:var(--text); background:var(--tint);}
+  textarea{width:100%; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; color:var(--text); font-family:var(--body); font-size:14px; resize:none;}
+  textarea:focus{outline:none; border-color:var(--ember);}
+  .done{text-align:center; padding-top:50px;}
+  .done .big{font-size:60px;}
+  .done h2{margin:16px 0 8px;}
+
   .nav{position:fixed; bottom:0; width:100%; max-width:430px; background:rgba(11,11,13,.94); backdrop-filter:blur(12px); border-top:1px solid var(--border); display:flex; padding:9px 0 calc(9px + env(safe-area-inset-bottom)); z-index:5;}
   .nav button{flex:1; background:none; border:none; color:var(--muted); font-size:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; font-family:var(--body);}
   .nav button .ic{font-size:19px;} .nav button.active{color:var(--ember);}
@@ -153,6 +166,59 @@
       <div id="workoutDetail"></div>
     </section>
 
+    <!-- FEEDBACK -->
+    <section class="screen" id="s-feedback">
+      <button class="back" id="backWorkout">← Volver</button>
+      <span class="eyebrow">Al terminar</span>
+      <h1>¿Cómo ha ido?</h1>
+      <p class="sub" style="margin:10px 0 26px">Tu feedback ayuda a tu entrenador a ajustar la carga.</p>
+
+      <div class="field">
+        <label>Esfuerzo percibido (RPE): <span class="rpe-val" id="rpeVal">7</span> / 10</label>
+        <input type="range" id="rpe" min="1" max="10" value="7" />
+      </div>
+      <div class="field">
+        <label>¿Cómo estaban las manos?</label>
+        <div class="opts" data-group="hands">
+          <div class="opt" data-v="bien">Bien</div>
+          <div class="opt sel" data-v="cargadas">Cargadas</div>
+          <div class="opt" data-v="dolor">Dolor</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>¿Cómo estaban los antebrazos?</label>
+        <div class="opts" data-group="forearms">
+          <div class="opt sel" data-v="bien">Bien</div>
+          <div class="opt" data-v="cargados">Cargados</div>
+          <div class="opt" data-v="limite">Al límite</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>¿Has completado todo el entrenamiento?</label>
+        <div class="opts" data-group="completed">
+          <div class="opt sel" data-v="si">Sí, entero</div>
+          <div class="opt" data-v="parcial">Parcial</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Observaciones</label>
+        <textarea id="fbNotes" rows="3" placeholder="Lo que quieras comentar a tu entrenador..."></textarea>
+      </div>
+      <button class="btn" id="sendFeedbackBtn">Enviar feedback</button>
+      <div class="msg" id="fbMsg"></div>
+      <div style="height:14px"></div>
+    </section>
+
+    <!-- GRACIAS -->
+    <section class="screen" id="s-gracias">
+      <div class="done">
+        <div class="big">🔥</div>
+        <h2>¡Registrado!</h2>
+        <p class="sub" style="margin-bottom:30px">Sesión completada. Tu entrenador ya tiene tu feedback.</p>
+        <button class="btn" id="graciasHome">Volver al inicio</button>
+      </div>
+    </section>
+
     <!-- PERFIL -->
     <section class="screen" id="s-perfil">
       <div class="prof-top">
@@ -186,19 +252,19 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   // ============================================================
   //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -261,7 +327,7 @@
   function screen(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     $(id).classList.add('active');
-    const tab = (id==='s-entreno') ? 's-inicio' : id;
+    const tab = (id==='s-entreno'||id==='s-feedback'||id==='s-gracias') ? 's-inicio' : id;
     document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
     window.scrollTo(0,0);
   }
@@ -337,9 +403,51 @@
       });
       html+='</div>';
     });
+    html+='<button class="btn" id="finishBtn">Finalizar y dar feedback</button><div style="height:10px"></div>';
     $('workoutDetail').innerHTML=html;
+    $('finishBtn').addEventListener('click', ()=>{ clear($('fbMsg')); screen('s-feedback'); });
     screen('s-entreno');
   }
+
+  // ---- Feedback ----
+  $('rpe').addEventListener('input', function(){ $('rpeVal').textContent=this.value; });
+  document.querySelectorAll('.opts').forEach(g=>{
+    g.querySelectorAll('.opt').forEach(o=>{
+      o.addEventListener('click', ()=>{ g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); });
+    });
+  });
+  function pickedValue(group){
+    const g=document.querySelector('.opts[data-group="'+group+'"]');
+    const sel=g?g.querySelector('.opt.sel'):null;
+    return sel?sel.dataset.v:null;
+  }
+  $('backWorkout').addEventListener('click', ()=>screen('s-entreno'));
+  $('graciasHome').addEventListener('click', ()=>screen('s-inicio'));
+
+  $('sendFeedbackBtn').addEventListener('click', async ()=>{
+    clear($('fbMsg'));
+    const user = auth.currentUser;
+    if(!user){ return; }
+    $('sendFeedbackBtn').disabled=true;
+    try{
+      await addDoc(collection(db,'feedback'), {
+        studentId: user.uid,
+        studentName: (myData && myData.name) || user.email,
+        level: (myData && myData.level) || null,
+        workoutId: myWorkout ? myWorkout.id : null,
+        workoutTitle: myWorkout ? myWorkout.title : null,
+        rpe: Number($('rpe').value),
+        hands: pickedValue('hands'),
+        forearms: pickedValue('forearms'),
+        completed: pickedValue('completed'),
+        notes: $('fbNotes').value.trim(),
+        createdAt: serverTimestamp()
+      });
+      $('fbNotes').value='';
+      screen('s-gracias');
+    }catch(e){ msg($('fbMsg'),'Error: '+(e.code||e.message||'no se pudo enviar'),'err'); }
+    finally{ $('sendFeedbackBtn').disabled=false; }
+  });
 
   // ---- Sesión ----
   async function route(user){

@@ -227,6 +227,12 @@
       </div>
     </section>
 
+    <!-- FEEDBACK -->
+    <section class="screen" id="adm-feedback">
+      <div class="head-row"><span class="eyebrow">Seguimiento</span><h1>Feedback</h1></div>
+      <div id="feedbackList"><div class="loading">Cargando…</div></div>
+    </section>
+
     <!-- AJUSTES -->
     <section class="screen" id="adm-ajustes">
       <span class="eyebrow">Preferencias</span><h1>Ajustes</h1>
@@ -249,6 +255,7 @@
       <button class="active" data-t="adm-panel"><span class="ic">📊</span>Panel</button>
       <button data-t="adm-alumnos"><span class="ic">👥</span>Alumnos</button>
       <button data-t="adm-entrenos"><span class="ic">📋</span>Entrenos</button>
+      <button data-t="adm-feedback"><span class="ic">📈</span>Feedback</button>
       <button data-t="adm-ajustes"><span class="ic">⚙️</span>Ajustes</button>
     </nav>
   </div>
@@ -264,13 +271,13 @@
   //  (la misma que pusiste en index.html — puedes copiarla de allí)
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -340,7 +347,7 @@
     window.scrollTo(0,0);
   }
   document.querySelectorAll('.nav button').forEach(b=>{
-    b.addEventListener('click', ()=>{ const t=b.dataset.t; screen(t); if(t==='adm-alumnos') loadAlumnos(); if(t==='adm-entrenos') loadEntrenos(); if(t==='adm-panel') loadDashboard(); });
+    b.addEventListener('click', ()=>{ const t=b.dataset.t; screen(t); if(t==='adm-alumnos') loadAlumnos(); if(t==='adm-entrenos') loadEntrenos(); if(t==='adm-panel') loadDashboard(); if(t==='adm-feedback') loadFeedback(); });
   });
   $('qaAlumnos').addEventListener('click', ()=>{ screen('adm-alumnos'); loadAlumnos(); });
   $('qaCrear').addEventListener('click', ()=>{ screen('adm-crear'); });
@@ -420,6 +427,49 @@
         html+='<div class="lrow" style="cursor:default"><div class="lvl">'+(w.level||'?')+'</div><div class="body"><b>'+(w.title||'Sin título')+'</b><span>'+n+' ejercicios · Nivel '+(w.level||'—')+'</span></div></div>'; });
       cont.innerHTML = ws.size ? html : '<div class="loading">Aún no has creado entrenamientos.</div>';
     }catch(e){ cont.innerHTML='<div class="loading">No se pudieron cargar.</div>'; }
+  }
+
+  // ---- Feedback recibido ----
+  const esc = (s)=>String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function rpeColor(r){ if(r>=9) return 'var(--danger)'; if(r>=7) return 'var(--warning)'; return 'var(--success)'; }
+  function fechaCorta(ts){
+    try{ const d = ts && ts.toDate ? ts.toDate() : null; if(!d) return '';
+      return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    }catch(e){ return ''; }
+  }
+  async function loadFeedback(){
+    const cont=$('feedbackList'); cont.innerHTML='<div class="loading">Cargando…</div>';
+    try{
+      const fs=await getDocs(collection(db,'feedback'));
+      const items=[];
+      fs.forEach(d=> items.push({id:d.id, ...d.data()}));
+      items.sort((a,b)=>{
+        const ta=a.createdAt&&a.createdAt.seconds?a.createdAt.seconds:0;
+        const tb=b.createdAt&&b.createdAt.seconds?b.createdAt.seconds:0;
+        return tb-ta;
+      });
+      if(!items.length){ cont.innerHTML='<div class="loading">Aún no has recibido feedback.</div>'; return; }
+      let html='';
+      items.forEach(f=>{
+        const ini=String(f.studentName||'?').substring(0,2).toUpperCase();
+        const det=[
+          f.hands?('manos: '+esc(f.hands)):null,
+          f.forearms?('antebrazos: '+esc(f.forearms)):null,
+          f.completed==='si'?'completó todo':(f.completed==='parcial'?'parcial':null)
+        ].filter(Boolean).join(' · ');
+        html+='<div class="lrow" style="cursor:default; align-items:flex-start">'+
+          '<div class="av">'+esc(ini)+'</div>'+
+          '<div class="body">'+
+            '<b>'+esc(f.studentName||'Alumno')+(f.level?(' · Nivel '+esc(f.level)):'')+'</b>'+
+            '<span>'+esc(f.workoutTitle||'')+(f.workoutTitle?' · ':'')+esc(fechaCorta(f.createdAt))+'</span>'+
+            '<span style="display:block; margin-top:4px">'+det+'</span>'+
+            (f.notes?('<span style="display:block; margin-top:6px; font-style:italic; color:var(--text-2)">“'+esc(f.notes)+'”</span>'):'')+
+          '</div>'+
+          '<div style="text-align:center; flex-shrink:0"><div style="font-family:var(--display); font-size:24px; line-height:1; color:'+rpeColor(f.rpe)+'">'+esc(f.rpe)+'</div><div style="font-size:9px; color:var(--muted); letter-spacing:1px">RPE</div></div>'+
+        '</div>';
+      });
+      cont.innerHTML=html;
+    }catch(e){ cont.innerHTML='<div class="loading">No se pudo cargar: '+esc(e.code||e.message||'')+'</div>'; }
   }
 
   // Crear entreno — bloques del método
