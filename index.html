@@ -126,6 +126,15 @@
   .done .big{font-size:60px;}
   .done h2{margin:16px 0 8px;}
 
+  .bubble{max-width:80%; padding:11px 14px; border-radius:16px; font-size:14px; line-height:1.45; margin-bottom:10px;}
+  .bubble.in{background:var(--surface); border:1px solid var(--border); border-bottom-left-radius:4px; margin-right:auto; color:var(--text);}
+  .bubble.out{background:var(--ember); color:var(--ink); border-bottom-right-radius:4px; margin-left:auto; font-weight:500;}
+  .bubble small{display:block; font-size:10px; opacity:.65; margin-top:4px;}
+  .chatbar{position:fixed; bottom:64px; width:100%; max-width:430px; left:50%; transform:translateX(-50%); display:none; gap:8px; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:var(--base); border-top:1px solid var(--border); z-index:6;}
+  .chatbar input{flex:1; background:var(--surface); border:1px solid var(--border); border-radius:22px; padding:12px 16px; color:var(--text); font-family:var(--body); font-size:14px;}
+  .chatbar input:focus{outline:none; border-color:var(--ember);}
+  .sendbtn{width:44px; height:44px; border-radius:50%; background:var(--ember); border:none; color:var(--ink); font-size:17px; cursor:pointer; flex-shrink:0;}
+
   .nav{position:fixed; bottom:0; width:100%; max-width:430px; background:rgba(11,11,13,.94); backdrop-filter:blur(12px); border-top:1px solid var(--border); display:flex; padding:9px 0 calc(9px + env(safe-area-inset-bottom)); z-index:5;}
   .nav button{flex:1; background:none; border:none; color:var(--muted); font-size:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; font-family:var(--body);}
   .nav button .ic{font-size:19px;} .nav button.active{color:var(--ember);}
@@ -226,6 +235,16 @@
       </div>
     </section>
 
+    <!-- MENSAJES -->
+    <section class="screen" id="s-mensajes" style="padding-bottom:150px">
+      <div class="brandbar"><div class="mk">💬</div><div class="wm">Tu entrenador</div></div>
+      <div id="chatMsgs"><div class="loading">Cargando…</div></div>
+      <div class="chatbar">
+        <input id="chatInput" type="text" placeholder="Escribe un mensaje..." />
+        <button class="sendbtn" id="chatSend">➤</button>
+      </div>
+    </section>
+
     <!-- PERFIL -->
     <section class="screen" id="s-perfil">
       <div class="prof-top">
@@ -251,6 +270,7 @@
 
     <nav class="nav">
       <button class="active" data-t="s-inicio"><span class="ic">🏠</span>Inicio</button>
+      <button data-t="s-mensajes"><span class="ic">💬</span>Mensajes</button>
       <button data-t="s-perfil"><span class="ic">👤</span>Perfil</button>
     </nav>
   </div>
@@ -259,19 +279,19 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, onSnapshot, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   // ============================================================
   //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -336,6 +356,8 @@
     $(id).classList.add('active');
     const tab = (id==='s-entreno'||id==='s-feedback'||id==='s-gracias') ? 's-inicio' : id;
     document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
+    const cb=document.querySelector('.chatbar'); if(cb){ cb.style.display = (id==='s-mensajes')?'flex':'none'; }
+    if(id==='s-mensajes'){ escucharChat(); }
     window.scrollTo(0,0);
   }
   document.querySelectorAll('.nav button').forEach(b=> b.addEventListener('click', ()=>screen(b.dataset.t)));
@@ -528,6 +550,57 @@
     }catch(e){ msg($('fbMsg'),'Error: '+(e.code||e.message||'no se pudo enviar'),'err'); }
     finally{ $('sendFeedbackBtn').disabled=false; }
   });
+
+  // ---- Mensajes ----
+  let chatUnsub=null;
+  function horaCorta(ts){
+    try{ const d=ts&&ts.toDate?ts.toDate():null; if(!d) return '';
+      return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    }catch(e){ return ''; }
+  }
+  function escucharChat(){
+    const user=auth.currentUser; if(!user) return;
+    if(chatUnsub){ chatUnsub(); chatUnsub=null; }
+    const cont=$('chatMsgs'); cont.innerHTML='<div class="loading">Cargando…</div>';
+    try{
+      const q=query(collection(db,'messages'), where('studentId','==',user.uid));
+      chatUnsub=onSnapshot(q, (snap)=>{
+        const items=[];
+        snap.forEach(d=> items.push({id:d.id, ...d.data()}));
+        items.sort((a,b)=>{
+          const ta=a.createdAt&&a.createdAt.seconds?a.createdAt.seconds:0;
+          const tb=b.createdAt&&b.createdAt.seconds?b.createdAt.seconds:0;
+          return ta-tb;
+        });
+        if(!items.length){ cont.innerHTML='<div class="loading">Aún no hay mensajes con tu entrenador.</div>'; return; }
+        let html='';
+        items.forEach(m=>{
+          const mio = m.senderRole==='student';
+          html+='<div class="bubble '+(mio?'out':'in')+'">'+esc(m.text)+'<small>'+esc(horaCorta(m.createdAt))+'</small></div>';
+        });
+        cont.innerHTML='<div style="display:flex; flex-direction:column">'+html+'</div>';
+        window.scrollTo(0, document.body.scrollHeight);
+      }, (err)=>{ cont.innerHTML='<div class="loading">No se pudo cargar: '+esc(err.code||'')+'</div>'; });
+    }catch(e){ cont.innerHTML='<div class="loading">No se pudo cargar.</div>'; }
+  }
+  async function enviarMensaje(){
+    const user=auth.currentUser;
+    const text=$('chatInput').value.trim();
+    if(!text || !user) return;
+    $('chatInput').value='';
+    try{
+      await addDoc(collection(db,'messages'), {
+        studentId: user.uid,
+        studentName: (myData && myData.name) || user.email,
+        senderId: user.uid,
+        senderRole: 'student',
+        text: text,
+        createdAt: serverTimestamp()
+      });
+    }catch(e){ alert('No se pudo enviar: '+(e.code||e.message||'')); }
+  }
+  $('chatSend').addEventListener('click', enviarMensaje);
+  $('chatInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ enviarMensaje(); } });
 
   // ---- Sesión ----
   async function route(user){
