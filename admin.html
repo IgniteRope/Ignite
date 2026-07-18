@@ -85,6 +85,19 @@
   .ex .meta{font-size:12px; color:var(--text-2); margin-top:4px;}
   .add-ex{width:100%; background:transparent; border:1px dashed var(--border); color:var(--ember); border-radius:10px; padding:11px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--body); margin-top:6px;}
   .editor{background:var(--surface); border:1px solid var(--ember); border-radius:14px; padding:16px; margin:10px 0;}
+  textarea{width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px 14px; color:var(--text); font-family:var(--body); font-size:15px; resize:none;}
+  textarea:focus{outline:none; border-color:var(--ember);}
+  .bsec{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px;}
+  .bsec-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .bsec-head .t{display:flex; align-items:center; gap:9px;}
+  .bsec-head .dot{width:8px; height:8px; border-radius:50%; background:var(--ember);}
+  .bsec-head h3{font-family:var(--display); font-size:18px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:var(--text);}
+  .opt-tag{font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:2px 6px;}
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-end; justify-content:center; z-index:20;}
+  .modal.show{display:flex;}
+  .modal .sheet{width:100%; max-width:430px; background:var(--surface); border:1px solid var(--border); border-radius:20px 20px 0 0; padding:20px 20px calc(24px + env(safe-area-inset-bottom)); max-height:88vh; overflow:auto;}
+  .modal .sheet h3{font-family:var(--display); font-size:20px; text-transform:uppercase; letter-spacing:.5px; color:var(--ember); margin-bottom:4px;}
+  .modal .sheet .msub{font-size:12px; color:var(--muted); margin-bottom:12px;}
 
   .seg{display:flex; gap:6px; background:var(--surface-alt); border:1px solid var(--border); border-radius:14px; padding:5px; margin-top:12px;}
   .seg-btn{flex:1; padding:12px; border-radius:10px; background:transparent; border:none; color:var(--text-2); font-family:var(--body); font-size:14px; font-weight:600; cursor:pointer;}
@@ -185,25 +198,33 @@
         <div class="lb" data-lvl="D">D</div><div class="lb" data-lvl="E">E</div><div class="lb" data-lvl="F">F</div>
       </div>
 
-      <label style="margin-top:20px">Ejercicios</label>
-      <div id="wExList"></div>
-      <button class="add-ex" id="addExBtn">+ Añadir ejercicio</button>
+      <div style="height:22px"></div>
+      <span class="eyebrow">Bloques del entrenamiento</span>
+      <div id="builder" style="margin-top:12px"></div>
 
-      <div class="editor hide" id="exEditor">
-        <input id="exName" type="text" placeholder="Nombre del ejercicio" />
-        <div class="two" style="margin-top:10px">
-          <div><input id="exSeries" type="text" placeholder="Series (ej. 4)" /></div>
-          <div><input id="exReps" type="text" placeholder="Reps (ej. 20s)" /></div>
-        </div>
-        <input id="exRest" type="text" placeholder="Descanso (ej. 60s)" style="margin-top:10px" />
-        <div class="two" style="margin-top:12px">
-          <div><button class="btn ghost sm" id="exCancel">Cancelar</button></div>
-          <div><button class="btn sm" id="exAdd">Añadir</button></div>
-        </div>
-      </div>
+      <label style="margin-top:8px">Recomendaciones</label>
+      <textarea id="wRecs" rows="3" placeholder="Consejos generales para esta sesión..."></textarea>
 
       <button class="btn" id="saveWorkoutBtn">Publicar entrenamiento</button>
       <div class="msg" id="wMsg"></div>
+
+      <div class="modal" id="exModal">
+        <div class="sheet">
+          <h3>Añadir ejercicio</h3>
+          <div class="msub" id="exModalSec">—</div>
+          <input id="mName" type="text" placeholder="Nombre del ejercicio" />
+          <div class="two" style="margin-top:10px">
+            <div><input id="mSeries" type="text" placeholder="Series (ej. 4)" /></div>
+            <div><input id="mReps" type="text" placeholder="Reps (ej. 20s / 12)" /></div>
+          </div>
+          <input id="mRest" type="text" placeholder="Descanso (ej. 60s)" style="margin-top:10px" />
+          <textarea id="mNotes" rows="2" placeholder="Observaciones (opcional)" style="margin-top:10px"></textarea>
+          <div class="two" style="margin-top:14px">
+            <div><button class="btn ghost sm" id="mCancel">Cancelar</button></div>
+            <div><button class="btn sm" id="mAdd">Añadir</button></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- AJUSTES -->
@@ -243,13 +264,13 @@
   //  (la misma que pusiste en index.html — puedes copiarla de allí)
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -392,51 +413,79 @@
     try{
       const ws=await getDocs(collection(db,'workoutTemplates'));
       let html='';
-      ws.forEach(d=>{ const w=d.data(); const n=(w.exercises||[]).length;
+      ws.forEach(d=>{ const w=d.data();
+        let n=0;
+        if(Array.isArray(w.sections)) w.sections.forEach(s=>{ n+=(s.exercises||[]).length; });
+        else n=(w.exercises||[]).length;
         html+='<div class="lrow" style="cursor:default"><div class="lvl">'+(w.level||'?')+'</div><div class="body"><b>'+(w.title||'Sin título')+'</b><span>'+n+' ejercicios · Nivel '+(w.level||'—')+'</span></div></div>'; });
       cont.innerHTML = ws.size ? html : '<div class="loading">Aún no has creado entrenamientos.</div>';
     }catch(e){ cont.innerHTML='<div class="loading">No se pudieron cargar.</div>'; }
   }
 
-  // Crear entreno
-  let newExercises=[];
+  // Crear entreno — bloques del método
+  const SECTIONS = [
+    {type:'mobility', label:'Movilidad', optional:false},
+    {type:'warmup', label:'Calentamiento corporal', optional:false},
+    {type:'technique', label:'Técnica', optional:false},
+    {type:'explosiveness', label:'Explosividad', optional:true},
+    {type:'throw', label:'Lanzada', optional:true},
+    {type:'ropeClimbs', label:'Subidas a cuerda', optional:false},
+    {type:'strength', label:'Fuerza', optional:false}
+  ];
+  let builderData = SECTIONS.map(s=>({...s, exercises:[]}));
+
   $('wLvlSelect').querySelectorAll('.lb').forEach(b=>{
     b.addEventListener('click', ()=>{ $('wLvlSelect').querySelectorAll('.lb').forEach(x=>x.classList.toggle('sel', x===b)); });
   });
-  $('addExBtn').addEventListener('click', ()=>{ show($('exEditor')); });
-  $('exCancel').addEventListener('click', ()=>{ hide($('exEditor')); });
-  $('exAdd').addEventListener('click', ()=>{
-    const name=$('exName').value.trim(); if(!name){ return; }
-    newExercises.push({ name, series:$('exSeries').value.trim(), reps:$('exReps').value.trim(), rest:$('exRest').value.trim() });
-    $('exName').value=''; $('exSeries').value=''; $('exReps').value=''; $('exRest').value='';
-    hide($('exEditor')); renderNewEx();
-  });
-  function renderNewEx(){
-    const c=$('wExList'); c.innerHTML='';
-    newExercises.forEach((e,i)=>{
-      const meta=[e.series&&(e.series+' series'), e.reps, e.rest&&('descanso '+e.rest)].filter(Boolean).join(' · ');
-      const div=document.createElement('div'); div.className='ex';
-      div.innerHTML='<div class="en">'+e.name+' <span class="del" data-i="'+i+'">✕</span></div>'+(meta?'<div class="meta">'+meta+'</div>':'');
-      c.appendChild(div);
+
+  function renderBuilder(){
+    const c=$('builder'); c.innerHTML='';
+    builderData.forEach((s,si)=>{
+      let exHtml='';
+      s.exercises.forEach((e,ei)=>{
+        const meta=[e.series&&(e.series+' series'), e.reps, e.rest&&('descanso '+e.rest)].filter(Boolean).join(' · ');
+        exHtml+='<div class="ex"><div class="en">'+e.name+' <span class="del" data-si="'+si+'" data-ei="'+ei+'">✕</span></div>'+(meta?'<div class="meta">'+meta+'</div>':'')+'</div>';
+      });
+      const opt = s.optional ? '<span class="opt-tag">Opcional</span>' : '';
+      c.innerHTML += '<div class="bsec"><div class="bsec-head"><div class="t"><span class="dot"></span><h3>'+s.label+'</h3></div>'+opt+'</div>'+exHtml+'<button class="add-ex" data-add="'+si+'">+ Añadir ejercicio</button></div>';
     });
-    c.querySelectorAll('.del').forEach(d=> d.addEventListener('click', ()=>{ newExercises.splice(+d.dataset.i,1); renderNewEx(); }));
+    c.querySelectorAll('[data-add]').forEach(b=> b.addEventListener('click', ()=>openExModal(+b.dataset.add)));
+    c.querySelectorAll('.del').forEach(d=> d.addEventListener('click', ()=>{ builderData[+d.dataset.si].exercises.splice(+d.dataset.ei,1); renderBuilder(); }));
   }
+  renderBuilder();
+
+  let modalSection=null;
+  function openExModal(si){
+    modalSection=si;
+    $('exModalSec').textContent='Bloque: '+builderData[si].label;
+    $('mName').value=''; $('mSeries').value=''; $('mReps').value=''; $('mRest').value=''; $('mNotes').value='';
+    $('exModal').classList.add('show');
+  }
+  $('mCancel').addEventListener('click', ()=>$('exModal').classList.remove('show'));
+  $('mAdd').addEventListener('click', ()=>{
+    const name=$('mName').value.trim(); if(!name){ return; }
+    builderData[modalSection].exercises.push({ name, series:$('mSeries').value.trim(), reps:$('mReps').value.trim(), rest:$('mRest').value.trim(), notes:$('mNotes').value.trim() });
+    $('exModal').classList.remove('show'); renderBuilder();
+  });
+
   $('saveWorkoutBtn').addEventListener('click', async ()=>{
     clear($('wMsg'));
     const title=$('wTitle').value.trim();
     const lvlEl=$('wLvlSelect').querySelector('.lb.sel');
     const level=lvlEl?lvlEl.dataset.lvl:null;
+    const sections = builderData.filter(s=>s.exercises.length>0).map(s=>({type:s.type, label:s.label, exercises:s.exercises}));
+    const totalEx = sections.reduce((a,s)=>a+s.exercises.length,0);
     if(!title){ msg($('wMsg'),'Ponle un título.','err'); return; }
     if(!level){ msg($('wMsg'),'Elige un nivel.','err'); return; }
-    if(!newExercises.length){ msg($('wMsg'),'Añade al menos un ejercicio.','err'); return; }
+    if(!totalEx){ msg($('wMsg'),'Añade al menos un ejercicio a algún bloque.','err'); return; }
     $('saveWorkoutBtn').disabled=true;
     try{
-      await addDoc(collection(db,'workoutTemplates'), { title, level, exercises:newExercises, coachId:currentUser.uid, createdAt:serverTimestamp() });
-      $('wTitle').value=''; newExercises=[]; renderNewEx();
+      await addDoc(collection(db,'workoutTemplates'), { title, level, sections, recommendations:$('wRecs').value.trim(), coachId:currentUser.uid, createdAt:serverTimestamp() });
+      $('wTitle').value=''; $('wRecs').value=''; builderData=SECTIONS.map(s=>({...s, exercises:[]})); renderBuilder();
       $('wLvlSelect').querySelectorAll('.lb').forEach(x=>x.classList.remove('sel'));
       msg($('wMsg'),'¡Entrenamiento publicado!','ok');
       setTimeout(()=>{ screen('adm-entrenos'); loadEntrenos(); }, 800);
-    }catch(e){ msg($('wMsg'),'No se pudo guardar.','err'); }
+    }catch(e){ msg($('wMsg'),'Error: '+(e.code||e.message||'no se pudo'),'err'); }
     finally{ $('saveWorkoutBtn').disabled=false; }
   });
 
