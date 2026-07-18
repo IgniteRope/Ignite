@@ -265,13 +265,13 @@
   //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -348,6 +348,20 @@
     });
   });
 
+  // ---- Fechas ----
+  const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function hoyISO(){
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function fechaBonita(iso){
+    if(!iso) return '';
+    const p=String(iso).split('-'); if(p.length!==3) return iso;
+    const d=new Date(+p[0], +p[1]-1, +p[2]);
+    return DIAS[d.getDay()]+' '+(+p[2])+' '+MESES[+p[1]-1];
+  }
+
   // ---- Entrenamiento del alumno según su nivel ----
   function countEx(w){
     if(Array.isArray(w.sections)) return w.sections.reduce((a,s)=>a+((s.exercises||[]).length),0);
@@ -364,39 +378,82 @@
     }
     cont.innerHTML='<div class="loading">Buscando tus entrenamientos…</div>';
     try{
+      // 1) Entrenamientos de su nivel
       const snap=await getDocs(collection(db,'workoutTemplates'));
-      const list=[];
-      snap.forEach(d=>{ const w=d.data(); if(w.level===level){ list.push({id:d.id, ...w}); } });
-      myWorkouts=list;
-      if(!list.length){
-        cont.innerHTML='<div class="empty"><div class="ic">📋</div><b>Aún no hay entrenamiento</b><span>Todavía no hay ningún entrenamiento publicado para el nivel '+esc(level)+'.</span></div>';
+      const porId={};
+      const delNivel=[];
+      snap.forEach(d=>{ const w=d.data(); porId[d.id]={id:d.id, ...w}; if(w.level===level){ delNivel.push({id:d.id, ...w}); } });
+      myWorkouts=delNivel;
+
+      // 2) Sesiones programadas para su nivel (de hoy en adelante)
+      let sesiones=[];
+      try{
+        const asg=await getDocs(collection(db,'assignments'));
+        const hoy=hoyISO();
+        asg.forEach(d=>{ const a=d.data();
+          if(a.level===level && String(a.date||'')>=hoy){ sesiones.push({id:d.id, ...a}); }
+        });
+        sesiones.sort((a,b)=> String(a.date||'').localeCompare(String(b.date||'')));
+      }catch(e){ /* si no hay agenda, seguimos con la lista normal */ }
+
+      if(!delNivel.length && !sesiones.length){
+        cont.innerHTML='<div class="empty"><div class="ic">📋</div><b>Aún no hay entrenamiento</b><span>Todavía no hay nada publicado para el nivel '+esc(level)+'.</span></div>';
         return;
       }
-      // El primero se muestra destacado; el resto, en lista
-      const first=list[0];
-      const nb = Array.isArray(first.sections) ? first.sections.length : 1;
-      let html =
-        '<div class="hero" data-wid="'+esc(first.id)+'">'+
+
+      let html='';
+
+      if(sesiones.length){
+        const prox=sesiones[0];
+        const w=porId[prox.workoutId];
+        const esHoy = prox.date===hoyISO();
+        if(w){
+          const nb = Array.isArray(w.sections) ? w.sections.length : 1;
+          html+='<div class="hero" data-wid="'+esc(w.id)+'">'+
+            '<div class="flame">🔥</div>'+
+            '<span class="tag">'+(esHoy?'Sesión de hoy':'Próxima sesión · '+esc(fechaBonita(prox.date)))+'</span>'+
+            '<h2>'+esc(w.title)+'</h2>'+
+            '<div class="meta"><span><b>'+countEx(w)+'</b> ejercicios</span><span><b>'+nb+'</b> bloques</span></div>'+
+            '<div class="go">Ver entrenamiento &nbsp;→</div>'+
+          '</div>';
+        }
+        if(sesiones.length>1){
+          html+='<div style="height:24px"></div><span class="eyebrow">Próximas sesiones</span><div style="height:12px"></div>';
+          sesiones.slice(1).forEach(s=>{
+            const ww=porId[s.workoutId]; if(!ww) return;
+            html+='<div class="wcard" data-wid="'+esc(ww.id)+'">'+
+              '<div class="wc-ic">🗓️</div>'+
+              '<div class="wc-body"><b>'+esc(ww.title)+'</b><span>'+esc(fechaBonita(s.date))+'</span></div>'+
+              '<span class="wc-chev">›</span></div>';
+          });
+        }
+      } else {
+        // Sin sesiones programadas: mostramos los entrenamientos de su nivel
+        const first=delNivel[0];
+        const nb = Array.isArray(first.sections) ? first.sections.length : 1;
+        html+='<div class="hero" data-wid="'+esc(first.id)+'">'+
           '<div class="flame">🔥</div>'+
           '<span class="tag">Tu entrenamiento · Nivel '+esc(level)+'</span>'+
           '<h2>'+esc(first.title)+'</h2>'+
           '<div class="meta"><span><b>'+countEx(first)+'</b> ejercicios</span><span><b>'+nb+'</b> bloques</span></div>'+
           '<div class="go">Ver entrenamiento &nbsp;→</div>'+
         '</div>';
-      if(list.length>1){
-        html+='<div style="height:24px"></div><span class="eyebrow">Más entrenamientos</span><div style="height:12px"></div>';
-        list.slice(1).forEach(w=>{
-          html+='<div class="wcard" data-wid="'+esc(w.id)+'">'+
-            '<div class="wc-ic">🪢</div>'+
-            '<div class="wc-body"><b>'+esc(w.title)+'</b><span>'+countEx(w)+' ejercicios · Nivel '+esc(w.level)+'</span></div>'+
-            '<span class="wc-chev">›</span></div>';
-        });
+        if(delNivel.length>1){
+          html+='<div style="height:24px"></div><span class="eyebrow">Más entrenamientos</span><div style="height:12px"></div>';
+          delNivel.slice(1).forEach(w=>{
+            html+='<div class="wcard" data-wid="'+esc(w.id)+'">'+
+              '<div class="wc-ic">🪢</div>'+
+              '<div class="wc-body"><b>'+esc(w.title)+'</b><span>'+countEx(w)+' ejercicios · Nivel '+esc(w.level)+'</span></div>'+
+              '<span class="wc-chev">›</span></div>';
+          });
+        }
       }
+
       cont.innerHTML=html;
       cont.querySelectorAll('[data-wid]').forEach(el=>{
         el.addEventListener('click', ()=>{
-          myWorkout = myWorkouts.find(x=>x.id===el.dataset.wid) || null;
-          showWorkout();
+          myWorkout = (porId[el.dataset.wid]) || null;
+          if(myWorkout) showWorkout();
         });
       });
     }catch(e){

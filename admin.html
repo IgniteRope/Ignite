@@ -180,8 +180,26 @@
     <!-- ENTRENOS -->
     <section class="screen" id="adm-entrenos">
       <div class="head-row"><span class="eyebrow">Contenido</span><h1>Entrenamientos</h1></div>
-      <button class="btn" id="goCrear" style="margin:0 0 18px">➕ Nuevo entrenamiento</button>
+      <button class="btn" id="goCrear" style="margin:0 0 10px">➕ Nuevo entrenamiento</button>
+      <button class="btn ghost" id="goAgenda" style="margin:0 0 18px">🗓️ Programar sesiones</button>
       <div id="entrenosList"><div class="loading">Cargando…</div></div>
+    </section>
+
+    <!-- AGENDA -->
+    <section class="screen" id="adm-agenda">
+      <button class="back" id="backEntrenos2">← Entrenamientos</button>
+      <span class="eyebrow">Planificación</span>
+      <h1>Programar</h1>
+
+      <label>Entrenamiento</label>
+      <select id="agWorkout"><option value="">Elige un entrenamiento…</option></select>
+      <label>Fecha</label>
+      <input id="agDate" type="date" />
+      <button class="btn" id="agSaveBtn">Programar sesión</button>
+      <div class="msg" id="agMsg"></div>
+
+      <div class="sec-label"><span class="eyebrow">Sesiones programadas</span></div>
+      <div id="agendaList"><div class="loading">Cargando…</div></div>
     </section>
 
     <!-- CREAR ENTRENO -->
@@ -271,13 +289,13 @@
   //  (la misma que pusiste en index.html — puedes copiarla de allí)
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -334,7 +352,7 @@
   function screen(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     $(id).classList.add('active');
-    const map={'adm-alumno':'adm-alumnos','adm-crear':'adm-entrenos'};
+    const map={'adm-alumno':'adm-alumnos','adm-crear':'adm-entrenos','adm-agenda':'adm-entrenos'};
     const tab=map[id]||id;
     document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
     window.scrollTo(0,0);
@@ -511,6 +529,84 @@
     const name=$('mName').value.trim(); if(!name){ return; }
     builderData[modalSection].exercises.push({ name, series:$('mSeries').value.trim(), reps:$('mReps').value.trim(), rest:$('mRest').value.trim(), notes:$('mNotes').value.trim() });
     $('exModal').classList.remove('show'); renderBuilder();
+  });
+
+  // ---- Agenda / calendario ----
+  const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function hoyISO(){
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function fechaBonita(iso){
+    if(!iso) return '';
+    const p=iso.split('-'); if(p.length!==3) return iso;
+    const d=new Date(+p[0], +p[1]-1, +p[2]);
+    return DIAS[d.getDay()]+' '+(+p[2])+' '+MESES[+p[1]-1];
+  }
+
+  async function openAgenda(){
+    screen('adm-agenda'); clear($('agMsg'));
+    $('agDate').value = hoyISO();
+    // Cargamos los entrenamientos disponibles en el desplegable
+    try{
+      if(!Object.keys(workoutsCache).length){ await loadEntrenos(); }
+      const sel=$('agWorkout');
+      sel.innerHTML='<option value="">Elige un entrenamiento…</option>';
+      Object.values(workoutsCache).forEach(w=>{
+        sel.innerHTML+='<option value="'+esc(w.id)+'">'+esc(w.title)+' · Nivel '+esc(w.level)+'</option>';
+      });
+    }catch(e){}
+    loadAgenda();
+  }
+
+  async function loadAgenda(){
+    const cont=$('agendaList'); cont.innerHTML='<div class="loading">Cargando…</div>';
+    try{
+      const snap=await getDocs(collection(db,'assignments'));
+      const items=[];
+      snap.forEach(d=> items.push({id:d.id, ...d.data()}));
+      items.sort((a,b)=> String(a.date||'').localeCompare(String(b.date||'')));
+      const hoy=hoyISO();
+      const futuras=items.filter(i=> String(i.date||'') >= hoy);
+      if(!futuras.length){ cont.innerHTML='<div class="loading">No hay sesiones programadas.</div>'; return; }
+      let html='';
+      futuras.forEach(a=>{
+        const esHoy = a.date===hoy;
+        html+='<div class="lrow" style="cursor:default">'+
+          '<div class="lvl" style="'+(esHoy?'background:var(--ember); color:var(--ink); border-color:var(--ember);':'')+'">'+esc(a.level||'?')+'</div>'+
+          '<div class="body"><b>'+esc(a.workoutTitle||'Sesión')+'</b><span>'+(esHoy?'HOY · ':'')+esc(fechaBonita(a.date))+'</span></div>'+
+          '<span class="del-ag" data-id="'+esc(a.id)+'" style="color:var(--danger); font-size:13px; cursor:pointer; padding:6px">✕</span>'+
+        '</div>';
+      });
+      cont.innerHTML=html;
+      cont.querySelectorAll('.del-ag').forEach(x=> x.addEventListener('click', async ()=>{
+        if(!confirm('¿Quitar esta sesión del calendario?')) return;
+        try{ await deleteDoc(doc(db,'assignments',x.dataset.id)); loadAgenda(); }catch(e){}
+      }));
+    }catch(e){ cont.innerHTML='<div class="loading">No se pudo cargar: '+esc(e.code||e.message||'')+'</div>'; }
+  }
+
+  $('goAgenda').addEventListener('click', openAgenda);
+  $('backEntrenos2').addEventListener('click', ()=>{ screen('adm-entrenos'); loadEntrenos(); });
+
+  $('agSaveBtn').addEventListener('click', async ()=>{
+    clear($('agMsg'));
+    const wid=$('agWorkout').value, date=$('agDate').value;
+    if(!wid){ msg($('agMsg'),'Elige un entrenamiento.','err'); return; }
+    if(!date){ msg($('agMsg'),'Elige una fecha.','err'); return; }
+    const w=workoutsCache[wid];
+    if(!w){ msg($('agMsg'),'Ese entrenamiento ya no existe.','err'); return; }
+    $('agSaveBtn').disabled=true;
+    try{
+      await addDoc(collection(db,'assignments'), {
+        workoutId: wid, workoutTitle: w.title, level: w.level,
+        date: date, coachId: currentUser.uid, createdAt: serverTimestamp()
+      });
+      msg($('agMsg'),'Sesión programada para el '+fechaBonita(date)+'.','ok');
+      loadAgenda();
+    }catch(e){ msg($('agMsg'),'Error: '+(e.code||e.message||''),'err'); }
+    finally{ $('agSaveBtn').disabled=false; }
   });
 
   // ---- Editar / crear ----
