@@ -34,19 +34,6 @@
   h2{font-family:var(--display); font-weight:600; font-size:26px; text-transform:uppercase; color:var(--text);}
   .sub{color:var(--text-2); font-size:15px; line-height:1.5;}
 
-  /* Pantalla de acceso con el logo de fondo */
-  #authView{
-    background-image:
-      linear-gradient(180deg, rgba(11,11,13,.35) 0%, rgba(11,11,13,.55) 42%, rgba(11,11,13,.94) 68%, #0B0B0D 100%),
-      url('logo.png');
-    background-size: cover;
-    background-position: center 22%;
-    background-repeat: no-repeat;
-    justify-content: flex-end;
-  }
-  #authView .tabs, #authView input, #authView .btn{ position:relative; z-index:1; }
-  #authView label{ color:#F5F3F0; text-shadow:0 1px 3px rgba(0,0,0,.6); }
-
   .brand{display:flex; flex-direction:column; align-items:center; text-align:center; margin:40px 0 26px;}
   .brand .mark{width:60px; height:60px; border-radius:16px; background:var(--tint); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ember); font-size:30px; margin-bottom:16px;}
   .brand .wm{font-family:var(--display); font-weight:700; font-size:30px; letter-spacing:2px; text-transform:uppercase;}
@@ -181,7 +168,7 @@
 
   <!-- ACCESO -->
   <div id="authView" class="center">
-    <div style="flex:1; min-height:34vh"></div>
+    <div class="brand"><div class="mark">🔥</div><div class="wm">Método Ignite</div><small>ACCESO</small></div>
     <div class="tabs">
       <button class="tab active" id="tabLogin">Entrar</button>
       <button class="tab" id="tabRegister">Crear cuenta</button>
