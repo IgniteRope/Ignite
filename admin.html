@@ -127,12 +127,11 @@
 
   <!-- SETUP: convertir en admin -->
   <div id="setupView" class="center hide">
-    <div class="brand"><div class="mark">🛠️</div><div class="wm">Configuración</div><small>PRIMER ACCESO</small></div>
-    <p class="sub" style="text-align:center">Esta cuenta aún no es administradora. Conviértela para gestionar Ignite.</p>
-    <button class="btn" id="becomeAdminBtn" style="margin-top:24px">Convertir en administrador</button>
-    <button class="btn ghost" id="setupLogout" style="margin-top:10px">Cerrar sesión</button>
+    <div class="brand"><div class="mark">🔒</div><div class="wm">Sin acceso</div><small>SOLO ADMINISTRADORES</small></div>
+    <p class="sub" style="text-align:center">Esta cuenta no tiene permisos de administrador. Si eres alumno, entra desde la app de Ignite.</p>
+    <button class="btn ghost" id="setupLogout" style="margin-top:24px">Cerrar sesión</button>
     <div class="msg" id="setupMsg"></div>
-    <p class="note" style="margin-top:20px">Paso único de configuración inicial. Más adelante lo protegeremos con reglas de seguridad para que nadie más pueda hacerse administrador.</p>
+    <p class="note" style="margin-top:20px">Los permisos de administrador se conceden desde la base de datos, por seguridad.</p>
   </div>
 
   <!-- APP -->
@@ -188,8 +187,8 @@
     <!-- CREAR ENTRENO -->
     <section class="screen" id="adm-crear">
       <button class="back" id="backEntrenos">← Entrenamientos</button>
-      <span class="eyebrow">Crear entrenamiento</span>
-      <h1>Nuevo entreno</h1>
+      <span class="eyebrow">Entrenamiento</span>
+      <h1 id="crearTitulo">Nuevo entreno</h1>
       <label>Título</label>
       <input id="wTitle" type="text" placeholder="Ej. Técnica & Subidas" />
       <label>Asignar a nivel</label>
@@ -206,6 +205,7 @@
       <textarea id="wRecs" rows="3" placeholder="Consejos generales para esta sesión..."></textarea>
 
       <button class="btn" id="saveWorkoutBtn">Publicar entrenamiento</button>
+      <button class="btn ghost hide" id="deleteWorkoutBtn" style="margin-top:10px; color:var(--danger); border-color:var(--danger)">Eliminar entrenamiento</button>
       <div class="msg" id="wMsg"></div>
 
       <div class="modal" id="exModal">
@@ -264,20 +264,20 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   // ============================================================
   //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   //  (la misma que pusiste en index.html — puedes copiarla de allí)
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -318,16 +318,9 @@
     finally{ $('loginBtn').disabled=false; }
   });
 
-  // ---------- SETUP (convertir en admin) ----------
-  $('becomeAdminBtn').addEventListener('click', async ()=>{
-    if(!currentUser) return;
-    $('becomeAdminBtn').disabled=true;
-    try{
-      await setDoc(doc(db,'users',currentUser.uid), { role:'admin', email:currentUser.email }, {merge:true});
-      await route(currentUser);
-    }catch(e){ msg($('setupMsg'),'Error: '+(e.code||e.message||'desconocido'),'err'); }
-    finally{ $('becomeAdminBtn').disabled=false; }
-  });
+  // ---------- SETUP ----------
+  // El acceso de administrador se concede desde la base de datos (role: "admin"),
+  // no desde la app. Así nadie puede autoconcedérselo.
   $('setupLogout').addEventListener('click', ()=>signOut(auth));
   $('appLogout').addEventListener('click', ()=>signOut(auth));
 
@@ -350,8 +343,8 @@
     b.addEventListener('click', ()=>{ const t=b.dataset.t; screen(t); if(t==='adm-alumnos') loadAlumnos(); if(t==='adm-entrenos') loadEntrenos(); if(t==='adm-panel') loadDashboard(); if(t==='adm-feedback') loadFeedback(); });
   });
   $('qaAlumnos').addEventListener('click', ()=>{ screen('adm-alumnos'); loadAlumnos(); });
-  $('qaCrear').addEventListener('click', ()=>{ screen('adm-crear'); });
-  $('goCrear').addEventListener('click', ()=>{ screen('adm-crear'); });
+  $('qaCrear').addEventListener('click', ()=>{ resetBuilder(); screen('adm-crear'); });
+  $('goCrear').addEventListener('click', ()=>{ resetBuilder(); screen('adm-crear'); });
   $('backAlumnos').addEventListener('click', ()=>{ screen('adm-alumnos'); loadAlumnos(); });
   $('backEntrenos').addEventListener('click', ()=>{ screen('adm-entrenos'); loadEntrenos(); });
 
@@ -415,17 +408,19 @@
     });
   });
 
+  let workoutsCache={};
   async function loadEntrenos(){
     const cont=$('entrenosList'); cont.innerHTML='<div class="loading">Cargando…</div>';
     try{
       const ws=await getDocs(collection(db,'workoutTemplates'));
-      let html='';
-      ws.forEach(d=>{ const w=d.data();
+      let html=''; workoutsCache={};
+      ws.forEach(d=>{ const w=d.data(); workoutsCache[d.id]={id:d.id, ...w};
         let n=0;
         if(Array.isArray(w.sections)) w.sections.forEach(s=>{ n+=(s.exercises||[]).length; });
         else n=(w.exercises||[]).length;
-        html+='<div class="lrow" style="cursor:default"><div class="lvl">'+(w.level||'?')+'</div><div class="body"><b>'+(w.title||'Sin título')+'</b><span>'+n+' ejercicios · Nivel '+(w.level||'—')+'</span></div></div>'; });
+        html+='<div class="lrow" data-wid="'+d.id+'"><div class="lvl">'+(w.level||'?')+'</div><div class="body"><b>'+(w.title||'Sin título')+'</b><span>'+n+' ejercicios · Nivel '+(w.level||'—')+'</span></div><span class="chev">›</span></div>'; });
       cont.innerHTML = ws.size ? html : '<div class="loading">Aún no has creado entrenamientos.</div>';
+      cont.querySelectorAll('.lrow').forEach(r=> r.addEventListener('click', ()=>openEditWorkout(r.dataset.wid)));
     }catch(e){ cont.innerHTML='<div class="loading">No se pudieron cargar.</div>'; }
   }
 
@@ -518,6 +513,48 @@
     $('exModal').classList.remove('show'); renderBuilder();
   });
 
+  // ---- Editar / crear ----
+  let editingId=null;
+
+  function resetBuilder(){
+    editingId=null;
+    $('wTitle').value=''; $('wRecs').value='';
+    builderData=SECTIONS.map(s=>({...s, exercises:[]}));
+    $('wLvlSelect').querySelectorAll('.lb').forEach(x=>x.classList.remove('sel'));
+    $('crearTitulo').textContent='Nuevo entreno';
+    $('saveWorkoutBtn').textContent='Publicar entrenamiento';
+    $('deleteWorkoutBtn').classList.add('hide');
+    clear($('wMsg')); renderBuilder();
+  }
+
+  function openEditWorkout(id){
+    const w=workoutsCache[id]; if(!w) return;
+    editingId=id;
+    $('wTitle').value=w.title||'';
+    $('wRecs').value=w.recommendations||'';
+    $('wLvlSelect').querySelectorAll('.lb').forEach(x=>x.classList.toggle('sel', x.dataset.lvl===w.level));
+    // Reconstruimos los bloques con lo guardado
+    builderData=SECTIONS.map(s=>{
+      const saved = Array.isArray(w.sections) ? w.sections.find(x=>x.type===s.type) : null;
+      return {...s, exercises: saved ? (saved.exercises||[]).slice() : []};
+    });
+    $('crearTitulo').textContent='Editar entreno';
+    $('saveWorkoutBtn').textContent='Guardar cambios';
+    $('deleteWorkoutBtn').classList.remove('hide');
+    clear($('wMsg')); renderBuilder(); screen('adm-crear');
+  }
+
+  $('deleteWorkoutBtn').addEventListener('click', async ()=>{
+    if(!editingId) return;
+    if(!confirm('¿Seguro que quieres eliminar este entrenamiento? No se puede deshacer.')) return;
+    $('deleteWorkoutBtn').disabled=true;
+    try{
+      await deleteDoc(doc(db,'workoutTemplates',editingId));
+      resetBuilder(); screen('adm-entrenos'); loadEntrenos();
+    }catch(e){ msg($('wMsg'),'Error al eliminar: '+(e.code||e.message||''),'err'); }
+    finally{ $('deleteWorkoutBtn').disabled=false; }
+  });
+
   $('saveWorkoutBtn').addEventListener('click', async ()=>{
     clear($('wMsg'));
     const title=$('wTitle').value.trim();
@@ -530,11 +567,15 @@
     if(!totalEx){ msg($('wMsg'),'Añade al menos un ejercicio a algún bloque.','err'); return; }
     $('saveWorkoutBtn').disabled=true;
     try{
-      await addDoc(collection(db,'workoutTemplates'), { title, level, sections, recommendations:$('wRecs').value.trim(), coachId:currentUser.uid, createdAt:serverTimestamp() });
-      $('wTitle').value=''; $('wRecs').value=''; builderData=SECTIONS.map(s=>({...s, exercises:[]})); renderBuilder();
-      $('wLvlSelect').querySelectorAll('.lb').forEach(x=>x.classList.remove('sel'));
-      msg($('wMsg'),'¡Entrenamiento publicado!','ok');
-      setTimeout(()=>{ screen('adm-entrenos'); loadEntrenos(); }, 800);
+      const payload={ title, level, sections, recommendations:$('wRecs').value.trim() };
+      if(editingId){
+        await updateDoc(doc(db,'workoutTemplates',editingId), payload);
+        msg($('wMsg'),'¡Cambios guardados!','ok');
+      } else {
+        await addDoc(collection(db,'workoutTemplates'), {...payload, coachId:currentUser.uid, createdAt:serverTimestamp()});
+        msg($('wMsg'),'¡Entrenamiento publicado!','ok');
+      }
+      setTimeout(()=>{ resetBuilder(); screen('adm-entrenos'); loadEntrenos(); }, 800);
     }catch(e){ msg($('wMsg'),'Error: '+(e.code||e.message||'no se pudo'),'err'); }
     finally{ $('saveWorkoutBtn').disabled=false; }
   });

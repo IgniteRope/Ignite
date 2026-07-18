@@ -77,6 +77,13 @@
   .hero .meta b{color:var(--text); font-family:var(--display); font-size:18px;}
   .go{margin-top:16px; display:inline-flex; align-items:center; gap:8px; color:var(--ember); font-weight:600; font-size:14px;}
 
+  .wcard{display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 14px; margin-bottom:10px; cursor:pointer;}
+  .wcard .wc-ic{width:44px; height:44px; border-radius:12px; background:var(--tint); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;}
+  .wcard .wc-body{flex:1; min-width:0;}
+  .wcard .wc-body b{font-size:15px; display:block; color:var(--text);}
+  .wcard .wc-body span{font-size:12px; color:var(--text-2);}
+  .wcard .wc-chev{color:var(--muted);}
+
   .empty{background:var(--surface); border:1px dashed var(--border); border-radius:18px; padding:30px 20px; text-align:center;}
   .empty .ic{font-size:38px; opacity:.5;}
   .empty b{display:block; margin:12px 0 6px; color:var(--text); font-size:16px;}
@@ -258,13 +265,13 @@
   //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -272,7 +279,7 @@
   function msg(el,t,type){ el.className='msg '+type; el.textContent=t; }
   function clear(el){ el.className='msg'; el.textContent=''; }
 
-  let app, auth, db, myData=null, myWorkout=null;
+  let app, auth, db, myData=null, myWorkout=null, myWorkouts=[];
   try{ app=initializeApp(firebaseConfig); auth=getAuth(app); db=getFirestore(app); }
   catch(e){ msg($('authMsg'),'La configuración de Firebase no es válida todavía.','err'); }
   if(firebaseConfig.apiKey==='PEGA_AQUÍ'){ msg($('authMsg'),'Aún no has pegado tu configuración de Firebase.','err'); }
@@ -355,27 +362,43 @@
       cont.innerHTML='<div class="empty"><div class="ic">⏳</div><b>Sin nivel asignado</b><span>Tu entrenador te asignará un nivel en breve. Cuando lo haga, aquí verás tu entrenamiento.</span></div>';
       return;
     }
-    cont.innerHTML='<div class="loading">Buscando tu entrenamiento…</div>';
+    cont.innerHTML='<div class="loading">Buscando tus entrenamientos…</div>';
     try{
       const snap=await getDocs(collection(db,'workoutTemplates'));
-      let found=null;
-      snap.forEach(d=>{ const w=d.data(); if(w.level===level && !found){ found={id:d.id, ...w}; } });
-      myWorkout=found;
-      if(!found){
+      const list=[];
+      snap.forEach(d=>{ const w=d.data(); if(w.level===level){ list.push({id:d.id, ...w}); } });
+      myWorkouts=list;
+      if(!list.length){
         cont.innerHTML='<div class="empty"><div class="ic">📋</div><b>Aún no hay entrenamiento</b><span>Todavía no hay ningún entrenamiento publicado para el nivel '+esc(level)+'.</span></div>';
         return;
       }
-      const n=countEx(found);
-      const nb = Array.isArray(found.sections) ? found.sections.length : 1;
-      cont.innerHTML =
-        '<div class="hero" id="heroCard">'+
+      // El primero se muestra destacado; el resto, en lista
+      const first=list[0];
+      const nb = Array.isArray(first.sections) ? first.sections.length : 1;
+      let html =
+        '<div class="hero" data-wid="'+esc(first.id)+'">'+
           '<div class="flame">🔥</div>'+
           '<span class="tag">Tu entrenamiento · Nivel '+esc(level)+'</span>'+
-          '<h2>'+esc(found.title)+'</h2>'+
-          '<div class="meta"><span><b>'+n+'</b> ejercicios</span><span><b>'+nb+'</b> bloques</span></div>'+
+          '<h2>'+esc(first.title)+'</h2>'+
+          '<div class="meta"><span><b>'+countEx(first)+'</b> ejercicios</span><span><b>'+nb+'</b> bloques</span></div>'+
           '<div class="go">Ver entrenamiento &nbsp;→</div>'+
         '</div>';
-      $('heroCard').addEventListener('click', showWorkout);
+      if(list.length>1){
+        html+='<div style="height:24px"></div><span class="eyebrow">Más entrenamientos</span><div style="height:12px"></div>';
+        list.slice(1).forEach(w=>{
+          html+='<div class="wcard" data-wid="'+esc(w.id)+'">'+
+            '<div class="wc-ic">🪢</div>'+
+            '<div class="wc-body"><b>'+esc(w.title)+'</b><span>'+countEx(w)+' ejercicios · Nivel '+esc(w.level)+'</span></div>'+
+            '<span class="wc-chev">›</span></div>';
+        });
+      }
+      cont.innerHTML=html;
+      cont.querySelectorAll('[data-wid]').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          myWorkout = myWorkouts.find(x=>x.id===el.dataset.wid) || null;
+          showWorkout();
+        });
+      });
     }catch(e){
       cont.innerHTML='<div class="empty"><div class="ic">⚠️</div><b>No se pudo cargar</b><span>'+esc(e.code||e.message||'')+'</span></div>';
     }
