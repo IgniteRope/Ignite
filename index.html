@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Ignite — Acceso</title>
+<title>Ignite</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -15,17 +15,31 @@
     --success:#4CAF7D; --danger:#E5484D;
     --display:'Barlow Condensed', system-ui, sans-serif; --body:'Inter', system-ui, sans-serif;
   }
+  .phone[data-theme="light"]{
+    --base:#F6F4F0; --surface:#FFFFFF; --surface-alt:#F0ECE6; --border:#E4DFD8;
+    --text:#1A1714; --text-2:#6B655E; --muted:#9A938B; --tint:#FBEEE6;
+  }
+  .phone[data-theme="light"] .nav{background:rgba(246,244,240,.94);}
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   html,body{background:var(--base); color:var(--text); font-family:var(--body); min-height:100vh;}
   body{display:flex; justify-content:center;}
-  .phone{width:100%; max-width:430px; min-height:100vh; padding:26px 22px 40px; display:flex; flex-direction:column;}
+  .phone{width:100%; max-width:430px; min-height:100vh; background:var(--base); display:flex; flex-direction:column; transition:background .25s;}
+  .center{padding:26px 22px 40px; display:flex; flex-direction:column; min-height:100vh;}
+  .screen{flex:1; padding:24px 22px 112px; display:none; animation:fade .3s;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1;}}
 
-  .brand{display:flex; flex-direction:column; align-items:center; text-align:center; margin:40px 0 30px;}
+  .eyebrow{font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); font-weight:600;}
+  h1{font-family:var(--display); font-weight:700; font-size:38px; line-height:1; letter-spacing:.5px; text-transform:uppercase; color:var(--text);}
+  h2{font-family:var(--display); font-weight:600; font-size:26px; text-transform:uppercase; color:var(--text);}
+  .sub{color:var(--text-2); font-size:15px; line-height:1.5;}
+
+  .brand{display:flex; flex-direction:column; align-items:center; text-align:center; margin:40px 0 26px;}
   .brand .mark{width:60px; height:60px; border-radius:16px; background:var(--tint); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ember); font-size:30px; margin-bottom:16px;}
-  .brand .wm{font-family:var(--display); font-weight:700; font-size:30px; letter-spacing:2px; text-transform:uppercase; line-height:1;}
+  .brand .wm{font-family:var(--display); font-weight:700; font-size:30px; letter-spacing:2px; text-transform:uppercase;}
   .brand small{font-size:11px; letter-spacing:4px; color:var(--muted); margin-top:8px;}
 
-  .tabs{display:flex; gap:6px; background:var(--surface-alt); border:1px solid var(--border); border-radius:14px; padding:5px; margin-bottom:22px;}
+  .tabs{display:flex; gap:6px; background:var(--surface-alt); border:1px solid var(--border); border-radius:14px; padding:5px; margin-bottom:18px;}
   .tab{flex:1; padding:12px; border-radius:10px; background:transparent; border:none; color:var(--text-2); font-family:var(--body); font-size:14px; font-weight:600; cursor:pointer;}
   .tab.active{background:var(--ember); color:var(--ink);}
 
@@ -34,205 +48,319 @@
   input::placeholder{color:var(--muted);}
   input:focus{outline:none; border-color:var(--ember);}
 
-  .btn{width:100%; background:var(--ember); color:var(--ink); border:none; border-radius:14px; padding:16px; font-size:16px; font-weight:700; cursor:pointer; font-family:var(--body); margin-top:22px;}
+  .btn{width:100%; background:var(--ember); color:var(--ink); border:none; border-radius:14px; padding:16px; font-size:16px; font-weight:700; cursor:pointer; font-family:var(--body); margin-top:20px;}
   .btn:active{background:var(--copper-deep);}
-  .btn:disabled{opacity:.6; cursor:default;}
+  .btn:disabled{opacity:.6;}
   .btn.ghost{background:transparent; color:var(--text); border:1px solid var(--border);}
+  .btn.sm{padding:12px; font-size:14px;}
 
-  .msg{margin-top:16px; padding:13px 15px; border-radius:12px; font-size:14px; line-height:1.4; display:none;}
+  .msg{margin-top:14px; padding:13px 15px; border-radius:12px; font-size:14px; line-height:1.4; display:none;}
   .msg.err{display:block; background:rgba(229,72,77,.12); border:1px solid rgba(229,72,77,.4); color:#ffb3b5;}
   .msg.ok{display:block; background:rgba(76,175,125,.12); border:1px solid rgba(76,175,125,.4); color:#9fe3c1;}
-
   .hide{display:none !important;}
 
-  /* Vista "dentro" */
-  .inbox{margin-top:20px; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px; text-align:center;}
-  .inbox .big{font-size:48px;}
-  .inbox h2{font-family:var(--display); font-size:26px; text-transform:uppercase; letter-spacing:1px; margin:14px 0 6px;}
-  .inbox p{color:var(--text-2); font-size:14px; line-height:1.5;}
-  .inbox .lvl{display:inline-block; margin-top:14px; background:var(--tint); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; color:var(--text-2);}
-  .inbox .lvl b{color:var(--ember);}
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px;}
+  .hi small{color:var(--muted); font-size:12px; letter-spacing:1px; text-transform:uppercase;}
+  .hi div{font-family:var(--display); font-size:28px; font-weight:600; text-transform:uppercase; line-height:1; color:var(--text);}
+  .level{display:flex; flex-direction:column; align-items:center; justify-content:center; width:52px; height:52px; border-radius:14px; background:var(--surface); border:1px solid var(--border);}
+  .level b{font-family:var(--display); font-size:24px; color:var(--ember); line-height:1;}
+  .level span{font-size:8px; letter-spacing:1px; color:var(--muted);}
 
-  .foot{text-align:center; color:var(--muted); font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-top:auto; padding-top:30px;}
+  .brandbar{display:flex; align-items:center; gap:11px; margin-bottom:18px;}
+  .brandbar .mk{width:34px; height:34px; border-radius:10px; background:var(--tint); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ember); font-size:17px;}
+  .brandbar .wm{font-family:var(--display); font-weight:700; font-size:22px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text);}
+
+  .hero{background:linear-gradient(150deg, var(--tint) 0%, var(--surface) 55%); border:1px solid var(--border); border-radius:20px; padding:22px; position:relative; overflow:hidden; cursor:pointer;}
+  .hero .flame{position:absolute; right:-14px; top:-14px; font-size:120px; opacity:.10;}
+  .hero .tag{display:inline-block; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--ember); font-weight:700; margin-bottom:10px;}
+  .hero .meta{display:flex; gap:16px; margin-top:14px; color:var(--text-2); font-size:13px;}
+  .hero .meta b{color:var(--text); font-family:var(--display); font-size:18px;}
+  .go{margin-top:16px; display:inline-flex; align-items:center; gap:8px; color:var(--ember); font-weight:600; font-size:14px;}
+
+  .empty{background:var(--surface); border:1px dashed var(--border); border-radius:18px; padding:30px 20px; text-align:center;}
+  .empty .ic{font-size:38px; opacity:.5;}
+  .empty b{display:block; margin:12px 0 6px; color:var(--text); font-size:16px;}
+  .empty span{color:var(--text-2); font-size:14px; line-height:1.5;}
+
+  .back{background:none; border:none; color:var(--text-2); font-size:14px; margin-bottom:16px; display:flex; align-items:center; gap:6px; cursor:pointer; font-family:var(--body);}
+  .section{margin-bottom:22px;}
+  .section-title{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .section-title .dot{width:8px; height:8px; border-radius:50%; background:var(--ember);}
+  .section-title h3{font-family:var(--display); font-size:20px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--text);}
+  .exercise{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:10px;}
+  .exercise .name{font-weight:600; font-size:15px; margin-bottom:8px; color:var(--text);}
+  .chips{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{background:var(--surface-alt); border:1px solid var(--border); border-radius:8px; padding:4px 10px; font-size:12px; color:var(--text-2);}
+  .chip b{color:var(--text);}
+  .obs{font-size:13px; color:var(--text-2); margin-top:8px; line-height:1.5; font-style:italic;}
+  .recs{background:var(--tint); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:20px;}
+  .recs .eyebrow{color:var(--ember); margin-bottom:8px; display:block;}
+  .recs p{font-size:14px; color:var(--text-2); line-height:1.6;}
+
+  .prof-top{display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:24px;}
+  .avatar{width:80px; height:80px; border-radius:50%; background:var(--copper-deep); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--display); font-weight:600; font-size:30px; margin-bottom:14px;}
+  .badge{display:inline-flex; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; color:var(--text-2); margin-top:10px;}
+  .badge b{color:var(--ember);}
+  .set-card{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:14px;}
+  .seg{display:flex; gap:6px; background:var(--surface-alt); border:1px solid var(--border); border-radius:14px; padding:5px; margin-top:12px;}
+  .seg-btn{flex:1; padding:12px; border-radius:10px; background:transparent; border:none; color:var(--text-2); font-family:var(--body); font-size:14px; font-weight:600; cursor:pointer;}
+  .seg-btn.active{background:var(--ember); color:var(--ink);}
+
+  .nav{position:fixed; bottom:0; width:100%; max-width:430px; background:rgba(11,11,13,.94); backdrop-filter:blur(12px); border-top:1px solid var(--border); display:flex; padding:9px 0 calc(9px + env(safe-area-inset-bottom)); z-index:5;}
+  .nav button{flex:1; background:none; border:none; color:var(--muted); font-size:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; font-family:var(--body);}
+  .nav button .ic{font-size:19px;} .nav button.active{color:var(--ember);}
+  .loading{color:var(--muted); font-size:14px; text-align:center; padding:24px;}
 </style>
 </head>
 <body>
-<div class="phone">
+<div class="phone" data-theme="dark">
 
-  <div class="brand">
-    <div class="mark">🔥</div>
-    <div class="wm">Método Ignite</div>
-    <small>ACCESO</small>
-  </div>
-
-  <!-- FORMULARIO -->
-  <div id="authView">
+  <!-- ACCESO -->
+  <div id="authView" class="center">
+    <div class="brand"><div class="mark">🔥</div><div class="wm">Método Ignite</div><small>ACCESO</small></div>
     <div class="tabs">
       <button class="tab active" id="tabLogin">Entrar</button>
       <button class="tab" id="tabRegister">Crear cuenta</button>
     </div>
-
     <div id="nameField" class="hide">
       <label>Nombre</label>
       <input id="name" type="text" placeholder="Tu nombre" autocomplete="name" />
     </div>
-
     <label>Correo electrónico</label>
     <input id="email" type="email" placeholder="tucorreo@email.com" autocomplete="email" />
-
     <label>Contraseña</label>
     <input id="password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="current-password" />
-
     <button class="btn" id="submitBtn">Entrar</button>
-    <div class="msg" id="msg"></div>
+    <div class="msg" id="authMsg"></div>
   </div>
 
-  <!-- DENTRO -->
+  <!-- APP -->
   <div id="appView" class="hide">
-    <div class="inbox">
-      <div class="big">🔥</div>
-      <h2>¡Estás dentro!</h2>
-      <p id="who">—</p>
-      <div class="lvl">Nivel: <b id="lvl">sin asignar</b></div>
-    </div>
-    <p style="color:var(--muted); font-size:13px; text-align:center; margin-top:18px; line-height:1.5;">
-      Firebase está funcionando. El siguiente paso será cargar aquí tu entrenamiento real.
-    </p>
-    <button class="btn ghost" id="logoutBtn" style="margin-top:20px;">Cerrar sesión</button>
-  </div>
 
-  <div class="foot">Método Ignite</div>
+    <!-- INICIO -->
+    <section class="screen active" id="s-inicio">
+      <div class="brandbar"><div class="mk">🔥</div><div class="wm">Método Ignite</div></div>
+      <div class="topbar">
+        <div class="hi"><small>Hola</small><div id="uName">—</div></div>
+        <div class="level"><b id="uLvl">–</b><span>NIVEL</span></div>
+      </div>
+      <div id="homeContent"><div class="loading">Cargando tu entrenamiento…</div></div>
+    </section>
+
+    <!-- ENTRENAMIENTO -->
+    <section class="screen" id="s-entreno">
+      <button class="back" id="backHome">← Volver</button>
+      <div id="workoutDetail"></div>
+    </section>
+
+    <!-- PERFIL -->
+    <section class="screen" id="s-perfil">
+      <div class="prof-top">
+        <div class="avatar" id="pAv">–</div>
+        <h2 id="pName">—</h2>
+        <p class="sub" id="pEmail" style="font-size:13px">—</p>
+        <div class="badge">Nivel actual <b id="pLvl">—</b></div>
+      </div>
+      <div class="set-card">
+        <b style="color:var(--text)">Apariencia</b>
+        <div class="seg">
+          <button class="seg-btn" data-mode="light">☀️ Claro</button>
+          <button class="seg-btn active" data-mode="dark">🌙 Oscuro</button>
+        </div>
+      </div>
+      <div class="set-card">
+        <b style="color:var(--text)">Sesión</b>
+        <div style="height:10px"></div>
+        <button class="btn ghost sm" id="logoutBtn" style="margin-top:0">Cerrar sesión</button>
+      </div>
+      <p class="loading" style="font-size:11px; letter-spacing:2px; text-transform:uppercase">Método Ignite</p>
+    </section>
+
+    <nav class="nav">
+      <button class="active" data-t="s-inicio"><span class="ic">🏠</span>Inicio</button>
+      <button data-t="s-perfil"><span class="ic">👤</span>Perfil</button>
+    </nav>
+  </div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import {
-    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    signOut, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-  import {
-    getFirestore, doc, setDoc, getDoc, serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   // ============================================================
-  //  👇  PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE (Parte 2 de la guía)
+  //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
-  const $ = (id) => document.getElementById(id);
-  const msg = $("msg");
-  function showMsg(text, type){ msg.className = "msg " + type; msg.textContent = text; }
-  function clearMsg(){ msg.className = "msg"; msg.textContent = ""; }
+  const $ = (id)=>document.getElementById(id);
+  const esc = (s)=>String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function msg(el,t,type){ el.className='msg '+type; el.textContent=t; }
+  function clear(el){ el.className='msg'; el.textContent=''; }
 
-  // Aviso amable si aún no se ha pegado la config
-  if (firebaseConfig.apiKey === "PEGA_AQUÍ") {
-    showMsg("Aún no has pegado tu configuración de Firebase. Revisa la Parte 5 de la guía.", "err");
-  }
+  let app, auth, db, myData=null, myWorkout=null;
+  try{ app=initializeApp(firebaseConfig); auth=getAuth(app); db=getFirestore(app); }
+  catch(e){ msg($('authMsg'),'La configuración de Firebase no es válida todavía.','err'); }
+  if(firebaseConfig.apiKey==='PEGA_AQUÍ'){ msg($('authMsg'),'Aún no has pegado tu configuración de Firebase.','err'); }
 
-  let app, auth, db;
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } catch (e) {
-    showMsg("La configuración de Firebase no es válida todavía.", "err");
-  }
-
-  // --- Cambio entre Entrar / Crear cuenta ---
-  let mode = "login";
+  // ---- Pestañas entrar / crear cuenta ----
+  let mode='login';
   function setMode(m){
-    mode = m;
-    clearMsg();
-    $("tabLogin").classList.toggle("active", m === "login");
-    $("tabRegister").classList.toggle("active", m === "register");
-    $("nameField").classList.toggle("hide", m !== "register");
-    $("submitBtn").textContent = m === "login" ? "Entrar" : "Crear cuenta";
-    $("password").setAttribute("autocomplete", m === "login" ? "current-password" : "new-password");
+    mode=m; clear($('authMsg'));
+    $('tabLogin').classList.toggle('active', m==='login');
+    $('tabRegister').classList.toggle('active', m==='register');
+    $('nameField').classList.toggle('hide', m!=='register');
+    $('submitBtn').textContent = m==='login' ? 'Entrar' : 'Crear cuenta';
   }
-  $("tabLogin").addEventListener("click", () => setMode("login"));
-  $("tabRegister").addEventListener("click", () => setMode("register"));
+  $('tabLogin').addEventListener('click', ()=>setMode('login'));
+  $('tabRegister').addEventListener('click', ()=>setMode('register'));
 
-  // --- Traducción de errores de Firebase a español ---
   function friendly(code){
-    switch (code) {
-      case "auth/invalid-email": return "El correo no tiene un formato válido.";
-      case "auth/missing-password": return "Escribe una contraseña.";
-      case "auth/weak-password": return "La contraseña debe tener al menos 6 caracteres.";
-      case "auth/email-already-in-use": return "Ya existe una cuenta con ese correo. Prueba a entrar.";
-      case "auth/invalid-credential":
-      case "auth/wrong-password":
-      case "auth/user-not-found": return "Correo o contraseña incorrectos.";
-      case "auth/too-many-requests": return "Demasiados intentos. Espera un momento.";
-      case "auth/network-request-failed": return "Problema de conexión. Revisa tu internet.";
-      case "auth/unauthorized-domain": return "Dominio no autorizado. Añádelo en Authentication → Settings → Dominios autorizados.";
-      default: return "Ha ocurrido un error. Inténtalo de nuevo.";
+    switch(code){
+      case 'auth/invalid-email': return 'El correo no tiene un formato válido.';
+      case 'auth/weak-password': return 'La contraseña debe tener al menos 6 caracteres.';
+      case 'auth/email-already-in-use': return 'Ya existe una cuenta con ese correo. Prueba a entrar.';
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found': return 'Correo o contraseña incorrectos.';
+      case 'auth/too-many-requests': return 'Demasiados intentos. Espera un momento.';
+      case 'auth/network-request-failed': return 'Problema de conexión.';
+      default: return 'Ha ocurrido un error. Inténtalo de nuevo.';
     }
   }
 
-  // --- Enviar formulario ---
-  $("submitBtn").addEventListener("click", async () => {
-    if (!auth) { showMsg("Firebase no está configurado todavía.", "err"); return; }
-    clearMsg();
-    const name = $("name").value.trim();
-    const email = $("email").value.trim();
-    const password = $("password").value;
-
-    if (!email || !password) { showMsg("Rellena correo y contraseña.", "err"); return; }
-    if (mode === "register" && !name) { showMsg("Escribe tu nombre.", "err"); return; }
-
-    $("submitBtn").disabled = true;
-    try {
-      if (mode === "register") {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        // Creamos su ficha en Firestore. El nivel lo asigna el administrador.
-        await setDoc(doc(db, "users", cred.user.uid), {
-          name, email,
-          role: "student",
-          level: null,
-          createdAt: serverTimestamp()
-        });
+  $('submitBtn').addEventListener('click', async ()=>{
+    if(!auth) return;
+    clear($('authMsg'));
+    const name=$('name').value.trim(), email=$('email').value.trim(), pass=$('password').value;
+    if(!email||!pass){ msg($('authMsg'),'Rellena correo y contraseña.','err'); return; }
+    if(mode==='register' && !name){ msg($('authMsg'),'Escribe tu nombre.','err'); return; }
+    $('submitBtn').disabled=true;
+    try{
+      if(mode==='register'){
+        const cred=await createUserWithEmailAndPassword(auth,email,pass);
+        await setDoc(doc(db,'users',cred.user.uid), { name, email, role:'student', level:null, createdAt:serverTimestamp() });
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth,email,pass);
       }
-      // onAuthStateChanged se encarga de mostrar la vista "dentro".
-    } catch (e) {
-      showMsg(friendly(e.code), "err");
-    } finally {
-      $("submitBtn").disabled = false;
-    }
+    }catch(e){ msg($('authMsg'), friendly(e.code),'err'); }
+    finally{ $('submitBtn').disabled=false; }
   });
 
-  // --- Cerrar sesión ---
-  $("logoutBtn").addEventListener("click", () => signOut(auth));
+  $('logoutBtn').addEventListener('click', ()=>signOut(auth));
 
-  // --- Escucha el estado de sesión (persiste al recargar) ---
-  if (auth) {
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        $("authView").classList.add("hide");
-        $("appView").classList.remove("hide");
-        $("who").textContent = user.email;
-        // Leemos su nivel desde Firestore
-        try {
-          const snap = await getDoc(doc(db, "users", user.uid));
-          const data = snap.exists() ? snap.data() : null;
-          $("lvl").textContent = (data && data.level) ? data.level : "sin asignar";
-          if (data && data.name) $("who").textContent = data.name + " · " + user.email;
-        } catch (e) { /* si las reglas bloquean, dejamos "sin asignar" */ }
-      } else {
-        $("appView").classList.add("hide");
-        $("authView").classList.remove("hide");
-      }
-    });
+  // ---- Navegación ----
+  function screen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    $(id).classList.add('active');
+    const tab = (id==='s-entreno') ? 's-inicio' : id;
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
+    window.scrollTo(0,0);
   }
+  document.querySelectorAll('.nav button').forEach(b=> b.addEventListener('click', ()=>screen(b.dataset.t)));
+  $('backHome').addEventListener('click', ()=>screen('s-inicio'));
+  document.querySelectorAll('.seg-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelector('.phone').setAttribute('data-theme', b.dataset.mode);
+      b.parentElement.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+
+  // ---- Entrenamiento del alumno según su nivel ----
+  function countEx(w){
+    if(Array.isArray(w.sections)) return w.sections.reduce((a,s)=>a+((s.exercises||[]).length),0);
+    return (w.exercises||[]).length;
+  }
+
+  async function loadHome(){
+    const cont=$('homeContent');
+    const level = myData && myData.level;
+
+    if(!level){
+      cont.innerHTML='<div class="empty"><div class="ic">⏳</div><b>Sin nivel asignado</b><span>Tu entrenador te asignará un nivel en breve. Cuando lo haga, aquí verás tu entrenamiento.</span></div>';
+      return;
+    }
+    cont.innerHTML='<div class="loading">Buscando tu entrenamiento…</div>';
+    try{
+      const snap=await getDocs(collection(db,'workoutTemplates'));
+      let found=null;
+      snap.forEach(d=>{ const w=d.data(); if(w.level===level && !found){ found={id:d.id, ...w}; } });
+      myWorkout=found;
+      if(!found){
+        cont.innerHTML='<div class="empty"><div class="ic">📋</div><b>Aún no hay entrenamiento</b><span>Todavía no hay ningún entrenamiento publicado para el nivel '+esc(level)+'.</span></div>';
+        return;
+      }
+      const n=countEx(found);
+      const nb = Array.isArray(found.sections) ? found.sections.length : 1;
+      cont.innerHTML =
+        '<div class="hero" id="heroCard">'+
+          '<div class="flame">🔥</div>'+
+          '<span class="tag">Tu entrenamiento · Nivel '+esc(level)+'</span>'+
+          '<h2>'+esc(found.title)+'</h2>'+
+          '<div class="meta"><span><b>'+n+'</b> ejercicios</span><span><b>'+nb+'</b> bloques</span></div>'+
+          '<div class="go">Ver entrenamiento &nbsp;→</div>'+
+        '</div>';
+      $('heroCard').addEventListener('click', showWorkout);
+    }catch(e){
+      cont.innerHTML='<div class="empty"><div class="ic">⚠️</div><b>No se pudo cargar</b><span>'+esc(e.code||e.message||'')+'</span></div>';
+    }
+  }
+
+  function showWorkout(){
+    if(!myWorkout) return;
+    const w=myWorkout;
+    let html='<span class="eyebrow">Nivel '+esc(w.level)+'</span><h1>'+esc(w.title)+'</h1><div style="height:22px"></div>';
+    if(w.recommendations){
+      html+='<div class="recs"><span class="eyebrow">Recomendaciones</span><p>'+esc(w.recommendations)+'</p></div>';
+    }
+    const secs = Array.isArray(w.sections) ? w.sections : [{label:'Ejercicios', exercises:w.exercises||[]}];
+    secs.forEach(s=>{
+      if(!s.exercises || !s.exercises.length) return;
+      html+='<div class="section"><div class="section-title"><span class="dot"></span><h3>'+esc(s.label||'Bloque')+'</h3></div>';
+      s.exercises.forEach(e=>{
+        const chips=[];
+        if(e.series) chips.push('<span class="chip"><b>'+esc(e.series)+'</b> series</span>');
+        if(e.reps) chips.push('<span class="chip"><b>'+esc(e.reps)+'</b></span>');
+        if(e.rest) chips.push('<span class="chip">descanso <b>'+esc(e.rest)+'</b></span>');
+        html+='<div class="exercise"><div class="name">'+esc(e.name)+'</div>'+
+              (chips.length?'<div class="chips">'+chips.join('')+'</div>':'')+
+              (e.notes?'<div class="obs">'+esc(e.notes)+'</div>':'')+'</div>';
+      });
+      html+='</div>';
+    });
+    $('workoutDetail').innerHTML=html;
+    screen('s-entreno');
+  }
+
+  // ---- Sesión ----
+  async function route(user){
+    if(!user){ $('appView').classList.add('hide'); $('authView').classList.remove('hide'); return; }
+    $('authView').classList.add('hide'); $('appView').classList.remove('hide');
+    try{
+      const s=await getDoc(doc(db,'users',user.uid));
+      myData = s.exists()? s.data() : {name:user.email, email:user.email, level:null};
+    }catch(e){ myData={name:user.email, email:user.email, level:null}; }
+
+    const nm = myData.name || user.email;
+    $('uName').textContent = nm;
+    $('uLvl').textContent = myData.level || '–';
+    $('pName').textContent = nm;
+    $('pEmail').textContent = user.email;
+    $('pLvl').textContent = myData.level || 'sin asignar';
+    $('pAv').textContent = String(nm).substring(0,1).toUpperCase();
+    screen('s-inicio');
+    loadHome();
+  }
+  if(auth){ onAuthStateChanged(auth, route); }
 </script>
 </body>
 </html>
