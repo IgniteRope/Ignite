@@ -275,6 +275,57 @@
       <div id="feedbackList"><div class="loading">Cargando…</div></div>
     </section>
 
+    <!-- BIBLIOTECA -->
+    <section class="screen" id="adm-biblio">
+      <div class="head-row"><span class="eyebrow">Contenido</span><h1>Biblioteca</h1></div>
+      <button class="btn" id="goNuevoEj" style="margin:0 0 18px">➕ Nuevo ejercicio</button>
+      <div id="biblioList"><div class="loading">Cargando…</div></div>
+    </section>
+
+    <!-- NUEVO / EDITAR EJERCICIO -->
+    <section class="screen" id="adm-ejercicio">
+      <button class="back" id="backBiblio">← Biblioteca</button>
+      <span class="eyebrow">Ejercicio</span>
+      <h1 id="ejTitulo">Nuevo ejercicio</h1>
+
+      <label>Nombre</label>
+      <input id="ejName" type="text" placeholder="Ej. Presa de cuerda estática" />
+
+      <label>Categoría</label>
+      <select id="ejCat">
+        <option>Técnica</option><option>Trepa</option><option>Fuerza</option>
+        <option>Movilidad</option><option>Explosividad</option><option>Lanzada</option>
+      </select>
+
+      <label>Vídeo</label>
+      <div class="seg" style="margin-top:0">
+        <button class="seg-btn active" id="modoSubir">📤 Subir archivo</button>
+        <button class="seg-btn" id="modoEnlace">🔗 Pegar enlace</button>
+      </div>
+
+      <div id="zonaSubir" style="margin-top:12px">
+        <input id="ejFile" type="file" accept="video/*" style="padding:10px" />
+        <div class="note" id="ejProgreso"></div>
+      </div>
+      <div id="zonaEnlace" class="hide" style="margin-top:12px">
+        <input id="ejUrl" type="text" placeholder="https://youtube.com/... o https://vimeo.com/..." />
+      </div>
+      <div class="note" id="ejVideoOk"></div>
+
+      <label>Explicación</label>
+      <textarea id="ejDesc" rows="3" placeholder="Para qué sirve y cómo se ejecuta..."></textarea>
+
+      <label>Consejos (uno por línea)</label>
+      <textarea id="ejTips" rows="3" placeholder="Mantén los hombros activos&#10;Respira de forma controlada"></textarea>
+
+      <label>Errores frecuentes (uno por línea)</label>
+      <textarea id="ejErrs" rows="3" placeholder="Encoger los hombros&#10;Aguantar la respiración"></textarea>
+
+      <button class="btn" id="saveEjBtn">Guardar en la biblioteca</button>
+      <button class="btn ghost hide" id="deleteEjBtn" style="margin-top:10px; color:var(--danger); border-color:var(--danger)">Eliminar ejercicio</button>
+      <div class="msg" id="ejMsg"></div>
+    </section>
+
     <!-- AJUSTES -->
     <section class="screen" id="adm-ajustes">
       <span class="eyebrow">Preferencias</span><h1>Ajustes</h1>
@@ -297,6 +348,7 @@
       <button class="active" data-t="adm-panel"><span class="ic">📊</span>Panel</button>
       <button data-t="adm-alumnos"><span class="ic">👥</span>Alumnos</button>
       <button data-t="adm-entrenos"><span class="ic">📋</span>Entrenos</button>
+      <button data-t="adm-biblio"><span class="ic">🎬</span>Biblioteca</button>
       <button data-t="adm-feedback"><span class="ic">📈</span>Feedback</button>
       <button data-t="adm-ajustes"><span class="ic">⚙️</span>Ajustes</button>
     </nav>
@@ -307,19 +359,20 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, onSnapshot, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js";
 
   // ============================================================
   //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   //  (la misma que pusiste en index.html — puedes copiarla de allí)
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -328,9 +381,9 @@
   function msg(el, text, type){ el.className='msg '+type; el.textContent=text; }
   function clear(el){ el.className='msg'; el.textContent=''; }
 
-  let app, auth, db, currentUser=null;
+  let app, auth, db, storage, currentUser=null;
   try {
-    app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app);
+    app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); storage = getStorage(app);
   } catch(e){ msg($('authMsg'), 'La configuración de Firebase no es válida todavía.', 'err'); }
   if (firebaseConfig.apiKey === 'PEGA_AQUÍ') {
     msg($('authMsg'), 'Aún no has pegado tu configuración de Firebase (cópiala de tu index.html).', 'err');
@@ -376,14 +429,14 @@
   function screen(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     $(id).classList.add('active');
-    const map={'adm-alumno':'adm-alumnos','adm-crear':'adm-entrenos','adm-agenda':'adm-entrenos','adm-chat':'adm-alumnos'};
+    const map={'adm-alumno':'adm-alumnos','adm-crear':'adm-entrenos','adm-agenda':'adm-entrenos','adm-chat':'adm-alumnos','adm-ejercicio':'adm-biblio'};
     const tab=map[id]||id;
     document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
     const cb=document.querySelector('.chatbar'); if(cb){ cb.style.display = (id==='adm-chat')?'flex':'none'; }
     window.scrollTo(0,0);
   }
   document.querySelectorAll('.nav button').forEach(b=>{
-    b.addEventListener('click', ()=>{ const t=b.dataset.t; screen(t); if(t==='adm-alumnos') loadAlumnos(); if(t==='adm-entrenos') loadEntrenos(); if(t==='adm-panel') loadDashboard(); if(t==='adm-feedback') loadFeedback(); });
+    b.addEventListener('click', ()=>{ const t=b.dataset.t; screen(t); if(t==='adm-alumnos') loadAlumnos(); if(t==='adm-entrenos') loadEntrenos(); if(t==='adm-panel') loadDashboard(); if(t==='adm-feedback') loadFeedback(); if(t==='adm-biblio') loadBiblio(); });
   });
   $('qaAlumnos').addEventListener('click', ()=>{ screen('adm-alumnos'); loadAlumnos(); });
   $('qaCrear').addEventListener('click', ()=>{ resetBuilder(); screen('adm-crear'); });
@@ -554,6 +607,139 @@
     const name=$('mName').value.trim(); if(!name){ return; }
     builderData[modalSection].exercises.push({ name, series:$('mSeries').value.trim(), reps:$('mReps').value.trim(), rest:$('mRest').value.trim(), notes:$('mNotes').value.trim() });
     $('exModal').classList.remove('show'); renderBuilder();
+  });
+
+  // ---- Biblioteca de ejercicios ----
+  let exercisesCache={}, editingEjId=null, modoVideo='subir', videoSubido=null;
+
+  function resetEjercicio(){
+    editingEjId=null; videoSubido=null;
+    $('ejName').value=''; $('ejDesc').value=''; $('ejTips').value=''; $('ejErrs').value='';
+    $('ejUrl').value=''; $('ejFile').value=''; $('ejCat').selectedIndex=0;
+    $('ejTitulo').textContent='Nuevo ejercicio';
+    $('saveEjBtn').textContent='Guardar en la biblioteca';
+    $('deleteEjBtn').classList.add('hide');
+    $('ejProgreso').textContent=''; $('ejVideoOk').textContent='';
+    clear($('ejMsg'));
+  }
+
+  function setModoVideo(m){
+    modoVideo=m;
+    $('modoSubir').classList.toggle('active', m==='subir');
+    $('modoEnlace').classList.toggle('active', m==='enlace');
+    $('zonaSubir').classList.toggle('hide', m!=='subir');
+    $('zonaEnlace').classList.toggle('hide', m!=='enlace');
+  }
+  $('modoSubir').addEventListener('click', ()=>setModoVideo('subir'));
+  $('modoEnlace').addEventListener('click', ()=>setModoVideo('enlace'));
+
+  async function loadBiblio(){
+    const cont=$('biblioList'); cont.innerHTML='<div class="loading">Cargando…</div>';
+    try{
+      const snap=await getDocs(collection(db,'exercises'));
+      let html=''; exercisesCache={};
+      snap.forEach(d=>{ const x=d.data(); exercisesCache[d.id]={id:d.id, ...x};
+        const tieneVideo = x.videoUrl ? '🎬' : '—';
+        html+='<div class="lrow" data-eid="'+d.id+'"><div class="lvl" style="font-size:16px">'+tieneVideo+'</div>'+
+          '<div class="body"><b>'+esc(x.name||'Sin nombre')+'</b><span>'+esc(x.category||'')+'</span></div><span class="chev">›</span></div>';
+      });
+      cont.innerHTML = snap.size ? html : '<div class="loading">Aún no hay ejercicios en la biblioteca.</div>';
+      cont.querySelectorAll('.lrow').forEach(r=> r.addEventListener('click', ()=>openEjercicio(r.dataset.eid)));
+    }catch(e){ cont.innerHTML='<div class="loading">No se pudo cargar: '+esc(e.code||'')+'</div>'; }
+  }
+
+  function openEjercicio(id){
+    const x=exercisesCache[id]; if(!x) return;
+    resetEjercicio();
+    editingEjId=id;
+    $('ejName').value=x.name||'';
+    $('ejDesc').value=x.description||'';
+    $('ejTips').value=(x.tips||[]).join('\n');
+    $('ejErrs').value=(x.commonErrors||[]).join('\n');
+    const cats=Array.from($('ejCat').options).map(o=>o.value);
+    const idx=cats.indexOf(x.category); if(idx>=0) $('ejCat').selectedIndex=idx;
+    if(x.videoUrl){
+      videoSubido={url:x.videoUrl, path:x.videoPath||null};
+      if(x.videoPath){ setModoVideo('subir'); $('ejVideoOk').textContent='✅ Vídeo ya subido.'; }
+      else { setModoVideo('enlace'); $('ejUrl').value=x.videoUrl; }
+    }
+    $('ejTitulo').textContent='Editar ejercicio';
+    $('saveEjBtn').textContent='Guardar cambios';
+    $('deleteEjBtn').classList.remove('hide');
+    screen('adm-ejercicio');
+  }
+
+  $('goNuevoEj').addEventListener('click', ()=>{ resetEjercicio(); setModoVideo('subir'); screen('adm-ejercicio'); });
+  $('backBiblio').addEventListener('click', ()=>{ screen('adm-biblio'); loadBiblio(); });
+
+  // Subida del archivo de vídeo a Firebase Storage
+  function subirVideo(file){
+    return new Promise((resolve, reject)=>{
+      const nombre = Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const path = 'videos/'+nombre;
+      const r = storageRef(storage, path);
+      const task = uploadBytesResumable(r, file);
+      task.on('state_changed',
+        (s)=>{ const pct=Math.round((s.bytesTransferred/s.totalBytes)*100); $('ejProgreso').textContent='Subiendo vídeo… '+pct+'%'; },
+        (err)=> reject(err),
+        async ()=>{
+          try{ const url=await getDownloadURL(task.snapshot.ref);
+            $('ejProgreso').textContent=''; $('ejVideoOk').textContent='✅ Vídeo subido correctamente.';
+            resolve({url, path});
+          }catch(e){ reject(e); }
+        }
+      );
+    });
+  }
+
+  $('saveEjBtn').addEventListener('click', async ()=>{
+    clear($('ejMsg'));
+    const name=$('ejName').value.trim();
+    if(!name){ msg($('ejMsg'),'Ponle un nombre al ejercicio.','err'); return; }
+    $('saveEjBtn').disabled=true;
+    try{
+      let videoUrl = videoSubido ? videoSubido.url : '';
+      let videoPath = videoSubido ? videoSubido.path : null;
+
+      if(modoVideo==='subir'){
+        const f=$('ejFile').files[0];
+        if(f){ const res=await subirVideo(f); videoUrl=res.url; videoPath=res.path; }
+      } else {
+        const u=$('ejUrl').value.trim();
+        if(u){ videoUrl=u; videoPath=null; }
+      }
+
+      const payload={
+        name,
+        category: $('ejCat').value,
+        description: $('ejDesc').value.trim(),
+        tips: $('ejTips').value.split('\n').map(s=>s.trim()).filter(Boolean),
+        commonErrors: $('ejErrs').value.split('\n').map(s=>s.trim()).filter(Boolean),
+        videoUrl, videoPath
+      };
+      if(editingEjId){
+        await updateDoc(doc(db,'exercises',editingEjId), payload);
+        msg($('ejMsg'),'¡Cambios guardados!','ok');
+      } else {
+        await addDoc(collection(db,'exercises'), {...payload, coachId:currentUser.uid, createdAt:serverTimestamp()});
+        msg($('ejMsg'),'¡Ejercicio añadido a la biblioteca!','ok');
+      }
+      setTimeout(()=>{ resetEjercicio(); screen('adm-biblio'); loadBiblio(); }, 900);
+    }catch(e){ msg($('ejMsg'),'Error: '+(e.code||e.message||'no se pudo guardar'),'err'); }
+    finally{ $('saveEjBtn').disabled=false; }
+  });
+
+  $('deleteEjBtn').addEventListener('click', async ()=>{
+    if(!editingEjId) return;
+    if(!confirm('¿Eliminar este ejercicio de la biblioteca?')) return;
+    $('deleteEjBtn').disabled=true;
+    try{
+      const x=exercisesCache[editingEjId];
+      if(x && x.videoPath){ try{ await deleteObject(storageRef(storage, x.videoPath)); }catch(e){} }
+      await deleteDoc(doc(db,'exercises',editingEjId));
+      resetEjercicio(); screen('adm-biblio'); loadBiblio();
+    }catch(e){ msg($('ejMsg'),'Error al eliminar: '+(e.code||e.message||''),'err'); }
+    finally{ $('deleteEjBtn').disabled=false; }
   });
 
   // ---- Mensajes ----

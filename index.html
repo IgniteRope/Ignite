@@ -135,6 +135,24 @@
   .chatbar input:focus{outline:none; border-color:var(--ember);}
   .sendbtn{width:44px; height:44px; border-radius:50%; background:var(--ember); border:none; color:var(--ink); font-size:17px; cursor:pointer; flex-shrink:0;}
 
+  .search{width:100%; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; color:var(--text); font-family:var(--body); font-size:14px; margin:18px 0 14px;}
+  .search::placeholder{color:var(--muted);}
+  .libitem{display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px; cursor:pointer;}
+  .thumb{width:56px; height:56px; border-radius:10px; background:linear-gradient(140deg,var(--tint),var(--surface-alt)); display:flex; align-items:center; justify-content:center; color:var(--ember); font-size:20px; flex-shrink:0;}
+  .libitem .t{flex:1; min-width:0;}
+  .libitem .t b{font-size:15px; display:block; margin-bottom:3px; color:var(--text);}
+  .libitem .t span{font-size:12px; color:var(--muted); letter-spacing:1px; text-transform:uppercase;}
+  .libitem .chev{color:var(--muted);}
+  .vidbox{width:100%; border-radius:14px; overflow:hidden; background:#000; margin-bottom:18px;}
+  .vidbox video, .vidbox iframe{width:100%; aspect-ratio:16/9; display:block; border:0;}
+  .blk{margin-bottom:20px;}
+  .blk h4{font-family:var(--display); font-size:16px; letter-spacing:1px; text-transform:uppercase; color:var(--ember); margin-bottom:8px;}
+  .blk p{color:var(--text-2); font-size:14px; line-height:1.6;}
+  .blk ul{list-style:none;}
+  .blk li{color:var(--text-2); font-size:14px; line-height:1.6; padding-left:18px; position:relative; margin-bottom:6px;}
+  .blk li::before{content:''; position:absolute; left:0; top:9px; width:6px; height:6px; border-radius:50%; background:var(--ember);}
+  .blk.err li::before{background:var(--danger);}
+
   .nav{position:fixed; bottom:0; width:100%; max-width:430px; background:rgba(11,11,13,.94); backdrop-filter:blur(12px); border-top:1px solid var(--border); display:flex; padding:9px 0 calc(9px + env(safe-area-inset-bottom)); z-index:5;}
   .nav button{flex:1; background:none; border:none; color:var(--muted); font-size:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; font-family:var(--body);}
   .nav button .ic{font-size:19px;} .nav button.active{color:var(--ember);}
@@ -235,6 +253,20 @@
       </div>
     </section>
 
+    <!-- BIBLIOTECA -->
+    <section class="screen" id="s-biblio">
+      <span class="eyebrow">Aprende la técnica</span>
+      <h1>Biblioteca</h1>
+      <input class="search" id="bSearch" placeholder="🔍  Buscar ejercicio..." />
+      <div id="biblioList"><div class="loading">Cargando…</div></div>
+    </section>
+
+    <!-- DETALLE EJERCICIO -->
+    <section class="screen" id="s-ejercicio">
+      <button class="back" id="backBiblio">← Biblioteca</button>
+      <div id="ejDetalle"></div>
+    </section>
+
     <!-- MENSAJES -->
     <section class="screen" id="s-mensajes" style="padding-bottom:150px">
       <div class="brandbar"><div class="mk">💬</div><div class="wm">Tu entrenador</div></div>
@@ -270,6 +302,7 @@
 
     <nav class="nav">
       <button class="active" data-t="s-inicio"><span class="ic">🏠</span>Inicio</button>
+      <button data-t="s-biblio"><span class="ic">📚</span>Biblioteca</button>
       <button data-t="s-mensajes"><span class="ic">💬</span>Mensajes</button>
       <button data-t="s-perfil"><span class="ic">👤</span>Perfil</button>
     </nav>
@@ -285,13 +318,13 @@
   //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -354,10 +387,11 @@
   function screen(id){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     $(id).classList.add('active');
-    const tab = (id==='s-entreno'||id==='s-feedback'||id==='s-gracias') ? 's-inicio' : id;
+    const tab = (id==='s-entreno'||id==='s-feedback'||id==='s-gracias') ? 's-inicio' : (id==='s-ejercicio' ? 's-biblio' : id);
     document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.t===tab));
     const cb=document.querySelector('.chatbar'); if(cb){ cb.style.display = (id==='s-mensajes')?'flex':'none'; }
     if(id==='s-mensajes'){ escucharChat(); }
+    if(id==='s-biblio'){ loadBiblio(); }
     window.scrollTo(0,0);
   }
   document.querySelectorAll('.nav button').forEach(b=> b.addEventListener('click', ()=>screen(b.dataset.t)));
@@ -550,6 +584,68 @@
     }catch(e){ msg($('fbMsg'),'Error: '+(e.code||e.message||'no se pudo enviar'),'err'); }
     finally{ $('sendFeedbackBtn').disabled=false; }
   });
+
+  // ---- Biblioteca ----
+  let biblioCache=[];
+
+  function embedUrl(url){
+    // Convierte enlaces de YouTube/Vimeo en enlaces incrustables
+    const u=String(url||'');
+    let m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{6,})/);
+    if(m) return 'https://www.youtube.com/embed/'+m[1];
+    m=u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if(m) return 'https://player.vimeo.com/video/'+m[1];
+    return null;
+  }
+
+  async function loadBiblio(){
+    const cont=$('biblioList'); cont.innerHTML='<div class="loading">Cargando…</div>';
+    try{
+      const snap=await getDocs(collection(db,'exercises'));
+      biblioCache=[];
+      snap.forEach(d=> biblioCache.push({id:d.id, ...d.data()}));
+      renderBiblio('');
+    }catch(e){ cont.innerHTML='<div class="loading">No se pudo cargar: '+esc(e.code||'')+'</div>'; }
+  }
+
+  function renderBiblio(filtro){
+    const cont=$('biblioList');
+    const f=String(filtro||'').toLowerCase();
+    const list=biblioCache.filter(x=> !f || String(x.name||'').toLowerCase().includes(f) || String(x.category||'').toLowerCase().includes(f));
+    if(!list.length){ cont.innerHTML='<div class="loading">'+(biblioCache.length?'Ningún ejercicio coincide.':'Aún no hay ejercicios en la biblioteca.')+'</div>'; return; }
+    let html='';
+    list.forEach(x=>{
+      html+='<div class="libitem" data-eid="'+esc(x.id)+'"><div class="thumb">'+(x.videoUrl?'▶':'🪢')+'</div>'+
+        '<div class="t"><b>'+esc(x.name)+'</b><span>'+esc(x.category||'')+'</span></div><span class="chev">›</span></div>';
+    });
+    cont.innerHTML=html;
+    cont.querySelectorAll('.libitem').forEach(el=> el.addEventListener('click', ()=>verEjercicio(el.dataset.eid)));
+  }
+
+  $('bSearch').addEventListener('input', function(){ renderBiblio(this.value); });
+  $('backBiblio').addEventListener('click', ()=>screen('s-biblio'));
+
+  function verEjercicio(id){
+    const x=biblioCache.find(e=>e.id===id); if(!x) return;
+    let html='';
+    if(x.videoUrl){
+      const emb=embedUrl(x.videoUrl);
+      html += '<div class="vidbox">'+
+        (emb ? '<iframe src="'+esc(emb)+'" allowfullscreen allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"></iframe>'
+             : '<video src="'+esc(x.videoUrl)+'" controls playsinline></video>')+
+        '</div>';
+    }
+    html += '<span class="eyebrow">'+esc(x.category||'')+'</span><h1 style="margin:6px 0 16px">'+esc(x.name)+'</h1>';
+    if(x.description) html+='<div class="blk"><h4>Explicación</h4><p>'+esc(x.description)+'</p></div>';
+    if(x.tips && x.tips.length){
+      html+='<div class="blk"><h4>Consejos</h4><ul>'+x.tips.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></div>';
+    }
+    if(x.commonErrors && x.commonErrors.length){
+      html+='<div class="blk err"><h4>Errores frecuentes</h4><ul>'+x.commonErrors.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></div>';
+    }
+    $('ejDetalle').innerHTML=html;
+    screen('s-ejercicio');
+  }
 
   // ---- Mensajes ----
   let chatUnsub=null;
