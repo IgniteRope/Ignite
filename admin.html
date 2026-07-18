@@ -158,7 +158,7 @@
       <div style="height:12px"></div>
       <div class="kpi-row">
         <div class="kpi accent"><b id="kAlumnos">—</b><small>Alumnos</small></div>
-        <div class="kpi"><b id="kNivel">—</b><small>Con nivel asignado</small></div>
+        <div class="kpi"><b id="kNivel">—</b><small>Suscripciones activas</small></div>
         <div class="kpi"><b id="kEntrenos">—</b><small>Entrenamientos</small></div>
         <div class="kpi"><b id="kPend">—</b><small>Sin nivel</small></div>
       </div>
@@ -184,6 +184,21 @@
       </div>
       <p class="note"><b>Solo tú</b> puedes cambiar el nivel. Se guarda al instante y el alumno lo verá en su app.</p>
       <div class="msg" id="aMsg"></div>
+
+      <label style="margin-top:22px">Suscripción</label>
+      <div class="seg" style="margin-top:0" id="aSubSelect">
+        <button class="seg-btn" data-sub="active">✅ Activa</button>
+        <button class="seg-btn" data-sub="trial">⏳ Prueba</button>
+        <button class="seg-btn" data-sub="inactive">🚫 Inactiva</button>
+      </div>
+      <label>Plan</label>
+      <div class="seg" style="margin-top:0" id="aPlanSelect">
+        <button class="seg-btn" data-plan="weekly_1">1 / semana</button>
+        <button class="seg-btn" data-plan="weekly_2">2 / semana</button>
+      </div>
+      <p class="note">Tú decides quién tiene acceso. Si la pones <b>inactiva</b>, el alumno no podrá ver sus entrenamientos hasta que la reactives.</p>
+      <div class="msg" id="aSubMsg"></div>
+
       <button class="btn ghost" id="goChat" style="margin-top:18px">💬 Enviar mensaje</button>
     </section>
 
@@ -366,13 +381,13 @@
   //  (la misma que pusiste en index.html — puedes copiarla de allí)
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -445,7 +460,7 @@
   $('backEntrenos').addEventListener('click', ()=>{ screen('adm-entrenos'); loadEntrenos(); });
 
   // Tema
-  document.querySelectorAll('.seg-btn').forEach(b=>{
+  document.querySelectorAll('.seg-btn[data-mode]').forEach(b=>{
     b.addEventListener('click', ()=>{
       document.querySelector('.phone').setAttribute('data-theme', b.dataset.mode);
       b.parentElement.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('active'));
@@ -458,10 +473,11 @@
   async function loadDashboard(){
     try{
       const us = await getDocs(collection(db,'users'));
-      let total=0, withLvl=0;
-      us.forEach(d=>{ const x=d.data(); if(x.role==='admin') return; total++; if(x.level) withLvl++; });
+      let total=0, withLvl=0, activas=0;
+      us.forEach(d=>{ const x=d.data(); if(x.role==='admin') return; total++; if(x.level) withLvl++;
+        if(x.subscriptionStatus==='active'||x.subscriptionStatus==='trial') activas++; });
       const ws = await getDocs(collection(db,'workoutTemplates'));
-      $('kAlumnos').textContent=total; $('kNivel').textContent=withLvl;
+      $('kAlumnos').textContent=total; $('kNivel').textContent=activas;
       $('kPend').textContent=(total-withLvl); $('kEntrenos').textContent=ws.size;
     }catch(e){ /* silencioso */ }
   }
@@ -476,7 +492,11 @@
         if(x.role==='admin') return; count++;
         const initials=(x.name||x.email||'?').substring(0,2).toUpperCase();
         const lvl = x.level ? '<span class="pill ok">Nivel '+x.level+'</span>' : '<span class="pill none">Sin nivel</span>';
-        html+='<div class="lrow" data-uid="'+d.id+'"><div class="av">'+initials+'</div><div class="body"><b>'+(x.name||'Sin nombre')+'</b><span>'+(x.email||'')+'</span></div>'+lvl+'</div>';
+        const st = x.subscriptionStatus||'inactive';
+        const sub = st==='active' ? '<span class="pill ok" style="background:rgba(76,175,125,.15); color:var(--success)">Activa</span>'
+                  : st==='trial' ? '<span class="pill" style="background:rgba(232,161,58,.15); color:var(--warning)">Prueba</span>'
+                  : '<span class="pill" style="background:rgba(229,72,77,.15); color:var(--danger)">Inactiva</span>';
+        html+='<div class="lrow" data-uid="'+d.id+'"><div class="av">'+initials+'</div><div class="body"><b>'+(x.name||'Sin nombre')+'</b><span>'+(x.email||'')+'</span><div style="margin-top:5px; display:flex; gap:6px">'+lvl+sub+'</div></div></div>';
       });
       cont.innerHTML = count ? html : '<div class="loading">Aún no hay alumnos registrados.</div>';
       cont.querySelectorAll('.lrow').forEach(r=> r.addEventListener('click', ()=>openAlumno(r.dataset.uid)));
@@ -489,6 +509,11 @@
     $('aAv').textContent=(x.name||x.email||'?').substring(0,2).toUpperCase();
     $('aName').textContent=x.name||'Sin nombre'; $('aEmail').textContent=x.email||'';
     $('aLvlSelect').querySelectorAll('.lb').forEach(b=>b.classList.toggle('sel', b.dataset.lvl===x.level));
+    const sub = x.subscriptionStatus || 'inactive';
+    $('aSubSelect').querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.sub===sub));
+    const plan = x.plan || 'weekly_1';
+    $('aPlanSelect').querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.plan===plan));
+    clear($('aSubMsg'));
     clear($('aMsg')); screen('adm-alumno');
   }
   $('aLvlSelect').querySelectorAll('.lb').forEach(b=>{
@@ -607,6 +632,33 @@
     const name=$('mName').value.trim(); if(!name){ return; }
     builderData[modalSection].exercises.push({ name, series:$('mSeries').value.trim(), reps:$('mReps').value.trim(), rest:$('mRest').value.trim(), notes:$('mNotes').value.trim() });
     $('exModal').classList.remove('show'); renderBuilder();
+  });
+
+  // Suscripción y plan (control manual del entrenador)
+  const NOMBRE_SUB={active:'activa', trial:'en prueba', inactive:'inactiva'};
+  $('aSubSelect').querySelectorAll('.seg-btn').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      if(!selectedAlumno) return;
+      const val=b.dataset.sub;
+      $('aSubSelect').querySelectorAll('.seg-btn').forEach(x=>x.classList.toggle('active', x===b));
+      try{
+        await updateDoc(doc(db,'users',selectedAlumno), { subscriptionStatus: val });
+        if(usersCache[selectedAlumno]) usersCache[selectedAlumno].subscriptionStatus=val;
+        msg($('aSubMsg'),'Suscripción '+NOMBRE_SUB[val]+', guardado.','ok');
+      }catch(e){ msg($('aSubMsg'),'No se pudo guardar: '+(e.code||''),'err'); }
+    });
+  });
+  $('aPlanSelect').querySelectorAll('.seg-btn').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      if(!selectedAlumno) return;
+      const val=b.dataset.plan;
+      $('aPlanSelect').querySelectorAll('.seg-btn').forEach(x=>x.classList.toggle('active', x===b));
+      try{
+        await updateDoc(doc(db,'users',selectedAlumno), { plan: val });
+        if(usersCache[selectedAlumno]) usersCache[selectedAlumno].plan=val;
+        msg($('aSubMsg'),'Plan actualizado.','ok');
+      }catch(e){ msg($('aSubMsg'),'No se pudo guardar: '+(e.code||''),'err'); }
+    });
   });
 
   // ---- Biblioteca de ejercicios ----

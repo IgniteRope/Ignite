@@ -153,6 +153,10 @@
   .blk li::before{content:''; position:absolute; left:0; top:9px; width:6px; height:6px; border-radius:50%; background:var(--ember);}
   .blk.err li::before{background:var(--danger);}
 
+  .statbox{flex:1; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; text-align:center;}
+  .statbox b{font-family:var(--display); font-size:26px; color:var(--ember); line-height:1; display:block;}
+  .statbox small{display:block; color:var(--muted); font-size:10px; letter-spacing:.6px; text-transform:uppercase; margin-top:6px;}
+
   .nav{position:fixed; bottom:0; width:100%; max-width:430px; background:rgba(11,11,13,.94); backdrop-filter:blur(12px); border-top:1px solid var(--border); display:flex; padding:9px 0 calc(9px + env(safe-area-inset-bottom)); z-index:5;}
   .nav button{flex:1; background:none; border:none; color:var(--muted); font-size:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; font-family:var(--body);}
   .nav button .ic{font-size:19px;} .nav button.active{color:var(--ember);}
@@ -235,6 +239,10 @@
         </div>
       </div>
       <div class="field">
+        <label>¿Cuánto ha durado? (minutos)</label>
+        <input id="fbDur" type="number" min="5" max="240" step="5" value="55" />
+      </div>
+      <div class="field">
         <label>Observaciones</label>
         <textarea id="fbNotes" rows="3" placeholder="Lo que quieras comentar a tu entrenador..."></textarea>
       </div>
@@ -251,6 +259,27 @@
         <p class="sub" style="margin-bottom:30px">Sesión completada. Tu entrenador ya tiene tu feedback.</p>
         <button class="btn" id="graciasHome">Volver al inicio</button>
       </div>
+    </section>
+
+    <!-- SUSCRIPCIÓN INACTIVA -->
+    <section class="screen" id="s-bloqueo">
+      <div class="brandbar"><div class="mk">🔥</div><div class="wm">Método Ignite</div></div>
+      <div style="height:30px"></div>
+      <div class="empty" style="padding:36px 22px">
+        <div class="ic">🔒</div>
+        <b>Suscripción no activa</b>
+        <span>Tu acceso a los entrenamientos está pausado. Habla con tu entrenador para activarlo.</span>
+      </div>
+      <div style="height:16px"></div>
+      <button class="btn ghost" id="bloqueoChat">💬 Escribir a mi entrenador</button>
+      <button class="btn ghost" id="bloqueoSalir" style="margin-top:10px">Cerrar sesión</button>
+    </section>
+
+    <!-- CARGA -->
+    <section class="screen" id="s-carga">
+      <span class="eyebrow">Tu volumen</span>
+      <h1>Carga</h1>
+      <div id="cargaContent"><div class="loading">Calculando…</div></div>
     </section>
 
     <!-- BIBLIOTECA -->
@@ -302,6 +331,7 @@
 
     <nav class="nav">
       <button class="active" data-t="s-inicio"><span class="ic">🏠</span>Inicio</button>
+      <button data-t="s-carga"><span class="ic">📊</span>Carga</button>
       <button data-t="s-biblio"><span class="ic">📚</span>Biblioteca</button>
       <button data-t="s-mensajes"><span class="ic">💬</span>Mensajes</button>
       <button data-t="s-perfil"><span class="ic">👤</span>Perfil</button>
@@ -318,13 +348,13 @@
   //  👇 PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE
   // ============================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyBoxzExzjC4Ki0amgsai2WpBqHvWgJ4Gvw",
-  authDomain: "ignite-75e3f.firebaseapp.com",
-  projectId: "ignite-75e3f",
-  storageBucket: "ignite-75e3f.firebasestorage.app",
-  messagingSenderId: "1066628134996",
-  appId: "1:1066628134996:web:dbfa676e309f21115495c1"
-};
+    apiKey: "PEGA_AQUÍ",
+    authDomain: "PEGA_AQUÍ",
+    projectId: "PEGA_AQUÍ",
+    storageBucket: "PEGA_AQUÍ",
+    messagingSenderId: "PEGA_AQUÍ",
+    appId: "PEGA_AQUÍ"
+  };
   // ============================================================
 
   const $ = (id)=>document.getElementById(id);
@@ -382,6 +412,13 @@
   });
 
   $('logoutBtn').addEventListener('click', ()=>signOut(auth));
+  $('bloqueoSalir').addEventListener('click', ()=>signOut(auth));
+  $('bloqueoChat').addEventListener('click', ()=>{
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    $('s-mensajes').classList.add('active');
+    const cb=document.querySelector('.chatbar'); if(cb) cb.style.display='flex';
+    escucharChat();
+  });
 
   // ---- Navegación ----
   function screen(id){
@@ -392,6 +429,7 @@
     const cb=document.querySelector('.chatbar'); if(cb){ cb.style.display = (id==='s-mensajes')?'flex':'none'; }
     if(id==='s-mensajes'){ escucharChat(); }
     if(id==='s-biblio'){ loadBiblio(); }
+    if(id==='s-carga'){ loadCarga(); }
     window.scrollTo(0,0);
   }
   document.querySelectorAll('.nav button').forEach(b=> b.addEventListener('click', ()=>screen(b.dataset.t)));
@@ -573,6 +611,8 @@
         workoutId: myWorkout ? myWorkout.id : null,
         workoutTitle: myWorkout ? myWorkout.title : null,
         rpe: Number($('rpe').value),
+        durationMin: Number($('fbDur').value)||0,
+        load: (Number($('rpe').value)||0) * (Number($('fbDur').value)||0),
         hands: pickedValue('hands'),
         forearms: pickedValue('forearms'),
         completed: pickedValue('completed'),
@@ -584,6 +624,64 @@
     }catch(e){ msg($('fbMsg'),'Error: '+(e.code||e.message||'no se pudo enviar'),'err'); }
     finally{ $('sendFeedbackBtn').disabled=false; }
   });
+
+  // ---- Carga acumulada (session-RPE) ----
+  function inicioSemana(){
+    const d=new Date(); const day=(d.getDay()+6)%7; // lunes = 0
+    d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d;
+  }
+  function inicioMes(){ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); }
+
+  async function loadCarga(){
+    const cont=$('cargaContent');
+    const user=auth.currentUser; if(!user) return;
+    cont.innerHTML='<div class="loading">Calculando…</div>';
+    try{
+      const q=query(collection(db,'feedback'), where('studentId','==',user.uid));
+      const snap=await getDocs(q);
+      const items=[];
+      snap.forEach(d=>{ const f=d.data();
+        const fecha = f.createdAt && f.createdAt.toDate ? f.createdAt.toDate() : null;
+        items.push({...f, fecha, load: f.load || ((f.rpe||0)*(f.durationMin||0))});
+      });
+      if(!items.length){
+        cont.innerHTML='<div class="empty"><div class="ic">📊</div><b>Sin datos todavía</b><span>Cuando completes entrenamientos y envíes tu feedback, aquí verás tu carga acumulada.</span></div>';
+        return;
+      }
+      const sem=inicioSemana(), mes=inicioMes();
+      let cargaSem=0, cargaMes=0, sesSem=0, sesMes=0, total=0;
+      items.forEach(i=>{
+        total+=i.load;
+        if(i.fecha && i.fecha>=mes){ cargaMes+=i.load; sesMes++; }
+        if(i.fecha && i.fecha>=sem){ cargaSem+=i.load; sesSem++; }
+      });
+      // Últimas sesiones (más recientes primero)
+      items.sort((a,b)=> (b.fecha?b.fecha.getTime():0)-(a.fecha?a.fecha.getTime():0));
+
+      let html=
+        '<div class="row" style="display:flex; gap:12px; margin:18px 0 14px">'+
+          '<div class="statbox"><b>'+cargaSem+'</b><small>Carga semanal</small></div>'+
+          '<div class="statbox"><b>'+cargaMes+'</b><small>Carga mensual</small></div>'+
+        '</div>'+
+        '<div class="row" style="display:flex; gap:12px; margin-bottom:20px">'+
+          '<div class="statbox"><b>'+sesSem+'</b><small>Sesiones semana</small></div>'+
+          '<div class="statbox"><b>'+sesMes+'</b><small>Sesiones mes</small></div>'+
+          '<div class="statbox"><b>'+total+'</b><small>Volumen total</small></div>'+
+        '</div>'+
+        '<div class="recs"><span class="eyebrow">Cómo se calcula</span><p>Carga = esfuerzo percibido (RPE) × minutos de sesión. Es una referencia para tu entrenador: él decide siempre tu progresión.</p></div>'+
+        '<span class="eyebrow">Últimas sesiones</span><div style="height:12px"></div>';
+
+      items.slice(0,8).forEach(i=>{
+        const f=i.fecha ? fechaBonita(i.fecha.getFullYear()+'-'+String(i.fecha.getMonth()+1).padStart(2,'0')+'-'+String(i.fecha.getDate()).padStart(2,'0')) : '';
+        html+='<div class="wcard" style="cursor:default">'+
+          '<div class="wc-ic">'+(i.rpe>=9?'🔴':(i.rpe>=7?'🟠':'🟢'))+'</div>'+
+          '<div class="wc-body"><b>'+esc(i.workoutTitle||'Sesión')+'</b><span>'+esc(f)+' · RPE '+esc(i.rpe)+' · '+esc(i.durationMin||0)+' min</span></div>'+
+          '<div style="text-align:right; flex-shrink:0"><div style="font-family:var(--display); font-size:20px; color:var(--ember); line-height:1">'+i.load+'</div><div style="font-size:9px; color:var(--muted); letter-spacing:1px">CARGA</div></div>'+
+        '</div>';
+      });
+      cont.innerHTML=html;
+    }catch(e){ cont.innerHTML='<div class="empty"><div class="ic">⚠️</div><b>No se pudo calcular</b><span>'+esc(e.code||e.message||'')+'</span></div>'; }
+  }
 
   // ---- Biblioteca ----
   let biblioCache=[];
@@ -714,6 +812,17 @@
     $('pEmail').textContent = user.email;
     $('pLvl').textContent = myData.level || 'sin asignar';
     $('pAv').textContent = String(nm).substring(0,1).toUpperCase();
+
+    // Control de acceso: solo entran los que tienen suscripción activa o en prueba
+    const sub = myData.subscriptionStatus || 'inactive';
+    const activo = (sub==='active' || sub==='trial');
+    document.querySelector('.nav').style.display = activo ? 'flex' : 'none';
+    if(!activo){
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      $('s-bloqueo').classList.add('active');
+      const cb=document.querySelector('.chatbar'); if(cb) cb.style.display='none';
+      return;
+    }
     screen('s-inicio');
     loadHome();
   }
